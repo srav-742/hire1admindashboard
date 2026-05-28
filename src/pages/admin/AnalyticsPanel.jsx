@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL, getAuthHeaders } from "../../firebase";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Briefcase, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Briefcase, Loader2, ChevronDown, ChevronUp, Trash2, Plus, UserPlus } from "lucide-react";
 
 const AnalyticsPanel = () => {
     const [data, setData] = useState({ recruiters: [], candidates: [], stats: { totalRecruiters: 0, totalCandidates: 0 } });
@@ -22,6 +22,18 @@ const AnalyticsPanel = () => {
             setError("Failed to load analytics data.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm("Are you sure you want to delete this user?")) return;
+        try {
+            const headers = await getAuthHeaders();
+            await axios.delete(`${API_URL}/admin/users/${userId}`, { headers });
+            fetchAnalytics(); // Refresh the list after deletion
+        } catch (err) {
+            console.error("[ADMIN] Failed to delete user:", err);
+            alert("Failed to delete user. Please try again.");
         }
     };
 
@@ -51,7 +63,9 @@ const AnalyticsPanel = () => {
                                 </span>
                             )}
                             <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-                                Joined {new Date(user.createdAt).toLocaleDateString()}
+                                {user.createdAt && !isNaN(new Date(user.createdAt).getTime())
+                                    ? `Joined ${new Date(user.createdAt).toLocaleDateString()}`
+                                    : ''}
                             </span>
                         </div>
                         <h3 className="text-gray-900 font-black text-lg leading-tight truncate mt-2">{user.name || "Unknown User"}</h3>
@@ -63,13 +77,30 @@ const AnalyticsPanel = () => {
                                 Company: <span className="text-gray-800 font-semibold">{user.company.name}</span>
                             </p>
                         )}
+                        {!isRecruiter && user.location && (
+                            <p className="text-gray-600 text-[11px] mt-1">
+                                Location: <span className="text-gray-800 font-semibold">{user.location}</span>
+                            </p>
+                        )}
                     </div>
-                    <button
-                        onClick={() => setExpandedId(isExpanded ? null : user._id)}
-                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 transition-all"
-                    >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setExpandedId(isExpanded ? null : user._id)}
+                            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-500 transition-all"
+                        >
+                            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteUser(user._id);
+                            }}
+                            className="p-2 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-500 transition-all"
+                            title="Delete User"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 <AnimatePresence>
@@ -112,6 +143,10 @@ const AnalyticsPanel = () => {
                                             <div>
                                                 <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Phone</p>
                                                 <p className="text-gray-800 text-sm">{user.phone || "N/A"}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Location</p>
+                                                <p className="text-gray-800 text-sm">{user.location || "N/A"}</p>
                                             </div>
                                         </>
                                     )}
