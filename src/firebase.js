@@ -25,7 +25,23 @@ export const loginWithEmail = async (email, password) => {
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export const getAuthHeaders = async () => {
-    // 1. Try Firebase Auth (Priority)
+    // Check if we have a local storage admin session first (Priority)
+    const storedUserStr = localStorage.getItem('user');
+    if (storedUserStr) {
+        try {
+            const storedUser = JSON.parse(storedUserStr);
+            if (storedUser && storedUser.role === 'admin' && storedUser.uid) {
+                console.log("[AUTH-HEADERS] Prioritizing local storage admin identification:", storedUser.uid);
+                return {
+                    'x-user-id': storedUser.uid
+                };
+            }
+        } catch (e) {
+            console.error("[AUTH-HEADERS] Failed to parse stored user:", e);
+        }
+    }
+
+    // 1. Try Firebase Auth (Priority for seeker/recruiter if any)
     const user = auth.currentUser;
     if (user) {
         const token = await user.getIdToken();
@@ -35,8 +51,7 @@ export const getAuthHeaders = async () => {
         };
     }
 
-    // 2. Fallback to Local Storage (for local-only accounts like Admin)
-    const storedUserStr = localStorage.getItem('user');
+    // 2. Fallback to Local Storage for other accounts
     if (storedUserStr) {
         try {
             const storedUser = JSON.parse(storedUserStr);
@@ -46,9 +61,7 @@ export const getAuthHeaders = async () => {
                     'x-user-id': storedUser.uid
                 };
             }
-        } catch (e) {
-            console.error("[AUTH-HEADERS] Failed to parse stored user:", e);
-        }
+        } catch (e) {}
     }
 
     return {};

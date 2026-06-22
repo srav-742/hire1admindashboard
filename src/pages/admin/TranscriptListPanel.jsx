@@ -13,9 +13,9 @@ const statusStyles = {
     APPLIED: 'bg-gray-500/15 text-gray-400 border-gray-500/20',
 };
 
-const ScorePill = ({ value, color, max = 100 }) => (
+const ScorePill = ({ value, color, max = 100, showMax = true }) => (
     <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl border ${color} font-black text-sm`}>
-        {value !== null && value !== undefined ? `${Math.round(value)}/${max}` : <span className="text-[10px] font-bold text-gray-600">N/A</span>}
+        {value !== null && value !== undefined ? (showMax ? `${Math.round(value)}/${max}` : `${Math.round(value)}`) : <span className="text-[10px] font-bold text-gray-600">N/A</span>}
     </div>
 );
 
@@ -27,6 +27,8 @@ const TranscriptListPanel = () => {
     const [loadingJobs, setLoadingJobs] = useState(true);
     const [loadingCandidates, setLoadingCandidates] = useState(false);
     const [search, setSearch] = useState('');
+    const [sortBy, setSortBy] = useState('none');
+    const [sortOrder, setSortOrder] = useState('desc');
 
     useEffect(() => {
         const fetchJobs = async () => {
@@ -68,6 +70,15 @@ const TranscriptListPanel = () => {
         c.email?.toLowerCase().includes(search.toLowerCase())
     );
 
+    const sorted = [...filtered].sort((a, b) => {
+        if (sortBy === 'none') return 0;
+        let valA = a[sortBy];
+        let valB = b[sortBy];
+        if (valA === null || valA === undefined) valA = -1;
+        if (valB === null || valB === undefined) valB = -1;
+        return sortOrder === 'desc' ? valB - valA : valA - valB;
+    });
+
     const selectedJob = jobs.find(j => j._id === selectedJobId);
 
     return (
@@ -90,15 +101,37 @@ const TranscriptListPanel = () => {
                         </select>
                     )}
                 </div>
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                    <input
-                        type="text"
-                        placeholder="Search candidates..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="pl-10 pr-4 py-3 rounded-2xl bg-white border border-black/10 focus:border-blue-500/50 outline-none text-sm font-medium w-56 transition-all text-gray-900"
-                    />
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                        <input
+                            type="text"
+                            placeholder="Search candidates..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="pl-10 pr-4 py-3 rounded-2xl bg-white border border-black/10 focus:border-blue-500/50 outline-none text-sm font-medium w-56 transition-all text-gray-900"
+                        />
+                    </div>
+                    <select
+                        value={sortBy}
+                        onChange={e => setSortBy(e.target.value)}
+                        className="px-4 py-3 rounded-2xl bg-[#fbf8f3] border border-black/10 text-gray-900 text-sm font-semibold outline-none focus:border-blue-500/50 transition-all cursor-pointer"
+                    >
+                        <option value="none">Sort: Default</option>
+                        <option value="resumeScore">Sort: Resume Match</option>
+                        <option value="assessmentScore">Sort: Assessment</option>
+                        <option value="interviewScore">Sort: Interview</option>
+                        <option value="proctoringScore">Sort: Integrity Penalty</option>
+                        <option value="finalScore">Sort: Final Score</option>
+                    </select>
+                    {sortBy !== 'none' && (
+                        <button
+                            onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                            className="px-4 py-3 rounded-2xl bg-white border border-black/10 hover:bg-gray-50 text-sm font-bold text-gray-700 transition-colors"
+                        >
+                            {sortOrder === 'desc' ? '↓' : '↑'}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -130,7 +163,7 @@ const TranscriptListPanel = () => {
                         <Users size={48} className="mx-auto mb-4 text-gray-400" />
                         <p className="font-bold text-lg uppercase tracking-widest text-gray-500">{search ? 'No matches' : 'No Candidates Yet'}</p>
                     </div>
-                ) : filtered.map((c, i) => (
+                ) : sorted.map((c, i) => (
                     <motion.div
                         key={c.applicationId}
                         initial={{ opacity: 0, y: 8 }}
@@ -161,6 +194,7 @@ const TranscriptListPanel = () => {
                             <ScorePill value={c.resumeScore} color="bg-blue-500/5 border-blue-500/20 text-blue-600" max={10} />
                             <ScorePill value={c.assessmentScore} color="bg-orange-500/5 border-orange-500/20 text-orange-600" max={20} />
                             <ScorePill value={c.interviewScore} color="bg-purple-500/5 border-purple-500/20 text-purple-600" max={70} />
+                            <ScorePill value={c.proctoringScore} color="bg-red-500/5 border-red-500/20 text-red-600" showMax={false} />
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gray-50 border border-black/10 font-black text-gray-800 text-sm">
                                 {c.finalScore ? `${Math.round(c.finalScore)}/100` : <span className="text-[10px] font-bold text-gray-500">N/A</span>}
                             </div>
@@ -169,6 +203,7 @@ const TranscriptListPanel = () => {
                             <span className="text-blue-600">RES</span>
                             <span className="text-orange-600">ASS</span>
                             <span className="text-purple-600">INT</span>
+                            <span className="text-red-600">PRC</span>
                             <span className="text-gray-900">FIN</span>
                         </div>
 
