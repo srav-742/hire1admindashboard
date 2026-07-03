@@ -25,6 +25,11 @@ export const loginWithEmail = async (email, password) => {
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export const getAuthHeaders = async () => {
+    const clientHeaders = {
+        'X-Client-ID': 'hire1percent_web_client',
+        'X-Client-Secret': 'h1p_secret_2026_gateway_key'
+    };
+
     // Check if we have a local storage admin session first (Priority)
     const storedUserStr = localStorage.getItem('user');
     if (storedUserStr) {
@@ -33,7 +38,8 @@ export const getAuthHeaders = async () => {
             if (storedUser && storedUser.role === 'admin' && storedUser.uid) {
                 console.log("[AUTH-HEADERS] Prioritizing local storage admin identification:", storedUser.uid);
                 return {
-                    'x-user-id': storedUser.uid
+                    'x-user-id': storedUser.uid,
+                    ...clientHeaders
                 };
             }
         } catch (e) {
@@ -47,7 +53,8 @@ export const getAuthHeaders = async () => {
         const token = await user.getIdToken();
         return {
             'Authorization': `Bearer ${token}`,
-            'x-user-id': user.uid
+            'x-user-id': user.uid,
+            ...clientHeaders
         };
     }
 
@@ -58,11 +65,12 @@ export const getAuthHeaders = async () => {
             if (storedUser && storedUser.uid) {
                 console.log("[AUTH-HEADERS] Using local storage user identification:", storedUser.uid);
                 return {
-                    'x-user-id': storedUser.uid
+                    'x-user-id': storedUser.uid,
+                    ...clientHeaders
                 };
             }
         } catch (e) {}
     }
 
-    return {};
+    return clientHeaders;
 };

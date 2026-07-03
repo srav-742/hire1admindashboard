@@ -27,6 +27,11 @@ const LoginPage = () => {
                 email: formData.email,
                 password: formData.password,
                 role: 'admin'
+            }, {
+                headers: {
+                    'X-Client-ID': 'hire1percent_web_client',
+                    'X-Client-Secret': 'h1p_secret_2026_gateway_key'
+                }
             });
 
             const profile = response.data.user;

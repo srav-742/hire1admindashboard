@@ -9,6 +9,7 @@ import axios from "axios";
 import { API_URL, getAuthHeaders } from "../firebase";
 import TranscriptListPanel from "./admin/TranscriptListPanel";
 import AnalyticsPanel from "./admin/AnalyticsPanel";
+import BlogPostsPanel from "./admin/BlogPostsPanel";
 
 // ─── Job Approval Panel ──────────────────────────────────────────────────────
 const JobRequestsPanel = () => {
@@ -414,6 +415,8 @@ const AdminContentPage = () => {
                                 ? <>Job <span className="text-gray-500">Approvals</span></>
                                 : activeTab === "analytics"
                                 ? <>Analytics <span className="text-gray-500">Dashboard</span></>
+                                : activeTab === "blogs"
+                                ? <>Blog <span className="text-gray-500">Management</span></>
                                 : <>Candidate <span className="text-gray-500">Transcripts</span></>
                             }
                         </h1>
@@ -424,6 +427,8 @@ const AdminContentPage = () => {
                                 ? "Review, approve, or reject recruiter job posting requests."
                                 : activeTab === "analytics"
                                 ? "Platform statistics, recruiters, and candidates overview."
+                                : activeTab === "blogs"
+                                ? "Create, publish, edit, and schedule dynamic blog posts."
                                 : "Review candidate interview transcripts."
                             }
                         </p>
@@ -482,6 +487,15 @@ const AdminContentPage = () => {
                     >
                         <FileText size={14} />
                         Candidate Transcripts
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("blogs")}
+                        className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "blogs"
+                            ? "bg-black text-white shadow-md"
+                            : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
+                    >
+                        <FileText size={14} />
+                        Blog Posts
                     </button>
                     <button
                         onClick={() => setActiveTab("analytics")}
@@ -547,6 +561,18 @@ const AdminContentPage = () => {
                         >
                             <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-[#fcfaf6] p-6 shadow-sm">
                                 <AnalyticsPanel />
+                            </div>
+                        </motion.div>
+                    ) : activeTab === "blogs" ? (
+                        <motion.div
+                            key="blogs"
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
+                                <BlogPostsPanel />
                             </div>
                         </motion.div>
                     ) : (
