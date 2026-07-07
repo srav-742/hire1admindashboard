@@ -4,15 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hire1Percent - Dedicated Admin Dashboard</title>
-  
-  <!-- Modern Premium Typography -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
+
+  <!-- DNS Prefetching for external services -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
+  <link rel="dns-prefetch" href="https://securetoken.googleapis.com" />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+  <link rel="dns-prefetch" href="https://api.hire1percent.com" />
+
+  <!-- Preconnect to font providers and API (establishes TCP/TLS early) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.hire1percent.com" />
+  <link rel="modulepreload" href="data:text/jsx;base64,aW1wb3J0IHsgU3RyaWN0TW9kZSB9IGZyb20gJ3JlYWN0JzsNCmltcG9ydCB7IGNyZWF0ZVJvb3QgfSBmcm9tICdyZWFjdC1kb20vY2xpZW50JzsNCmltcG9ydCAnLi9pbmRleC5jc3MnOw0KaW1wb3J0IEFwcCBmcm9tICcuL0FwcC5qc3gnOw0KDQpjcmVhdGVSb290KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyb290JykpLnJlbmRlcigNCiAgPFN0cmljdE1vZGU+DQogICAgPEFwcCAvPg0KICA8L1N0cmljdE1vZGU+DQopOw0K" />
+
+  <!--
+    Non-render-blocking Google Fonts:
+    1. Preload the CSS (highest priority, early discovery)
+    2. Load as stylesheet async via media="print" trick
+    3. Fallback <noscript> for no-JS environments
+  -->
+  <link
+    rel="preload"
+    as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+  />
+  <link
+    rel="stylesheet"
+    media="print"
+    onload="this.media='all'"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    />
+  </noscript>
+
   <meta name="theme-color" content="#0c0f16" />
-  <script type="module" crossorigin src="/assets/index-DkDQTAfQ.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DrIvPn1o.css">
+  <meta name="robots" content="noindex, nofollow" />
+  <script type="module" crossorigin src="/assets/index-Dzw_wWiA.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/chunk-react-CC7qrM7_.js">
+  <link rel="modulepreload" crossorigin href="/assets/chunk-icons-DHABwtna.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-DCH_InwC.css">
 </head>
 <body class="bg-[#f7f4ee] font-sans antialiased">
   <div id="root"></div>

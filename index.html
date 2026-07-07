@@ -4,13 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hire1Percent - Dedicated Admin Dashboard</title>
-  
-  <!-- Modern Premium Typography -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
+
+  <!-- DNS Prefetching for external services -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
+  <link rel="dns-prefetch" href="https://securetoken.googleapis.com" />
+  <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
+  <link rel="dns-prefetch" href="https://api.hire1percent.com" />
+
+  <!-- Preconnect to font providers and API (establishes TCP/TLS early) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.hire1percent.com" />
+  <link rel="modulepreload" href="/src/main.jsx" />
+
+  <!--
+    Non-render-blocking Google Fonts:
+    1. Preload the CSS (highest priority, early discovery)
+    2. Load as stylesheet async via media="print" trick
+    3. Fallback <noscript> for no-JS environments
+  -->
+  <link
+    rel="preload"
+    as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+  />
+  <link
+    rel="stylesheet"
+    media="print"
+    onload="this.media='all'"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+    />
+  </noscript>
+
   <meta name="theme-color" content="#0c0f16" />
+  <meta name="robots" content="noindex, nofollow" />
 </head>
 <body class="bg-[#f7f4ee] font-sans antialiased">
   <div id="root"></div>
