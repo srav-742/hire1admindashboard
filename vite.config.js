@@ -38,41 +38,6 @@ export default defineConfig(({ mode }) => ({
   build: {
     chunkSizeWarningLimit: 1000,
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return;
-
-          // Firebase — large, changes rarely, perfect for long-term caching
-          if (id.includes('firebase')) {
-            return 'chunk-firebase';
-          }
-
-          // Framer Motion
-          if (id.includes('framer-motion')) {
-            return 'chunk-motion';
-          }
-
-          // React DOM + Router (core UI runtime)
-          if (
-            id.includes('/react/') ||
-            id.includes('react-dom') ||
-            id.includes('react-router') ||
-            id.includes('scheduler')
-          ) {
-            return 'chunk-react';
-          }
-
-          // Lucide icons
-          if (id.includes('lucide')) {
-            return 'chunk-icons';
-          }
-
-          // Everything else
-          return 'chunk-vendor';
-        },
-      },
-    },
   },
 
   server: {
