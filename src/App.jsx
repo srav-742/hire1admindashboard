@@ -1,10 +1,10 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const AdminContentPage = lazy(() => import('./pages/AdminContentPage'));
-const CandidateTranscriptPage = lazy(() => import('./pages/admin/CandidateTranscriptPage'));
+import LoginPage from './pages/LoginPage';
+import AdminContentPage from './pages/AdminContentPage';
+import CandidateTranscriptPage from './pages/admin/CandidateTranscriptPage';
 
 function App() {
   return (

@@ -36,14 +36,6 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
 
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.info', 'console.debug', 'console.warn'],
-      },
-    },
     chunkSizeWarningLimit: 1000,
     sourcemap: false,
     rollupOptions: {
