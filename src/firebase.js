@@ -22,7 +22,7 @@ export const loginWithEmail = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password);
 };
 
-export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export const API_URL = import.meta.env.VITE_API_URL || "https://api.hire1percent.com/api";
 
 export const getAuthHeaders = async () => {
     const clientHeaders = {

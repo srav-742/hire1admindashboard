@@ -351,7 +351,7 @@ const JobRequestsPanel = () => {
 };
 
 const AdminContentPage = () => {
-    const [activeTab, setActiveTab] = useState("content");
+    const [activeTab, setActiveTab] = useState("jobs");
     const [content, setContent] = useState([]);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -409,9 +409,7 @@ const AdminContentPage = () => {
                             <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400">Admin Dashboard</span>
                         </div>
                         <h1 className="text-4xl font-semibold tracking-tight text-gray-950">
-                            {activeTab === "content"
-                                ? <>Content <span className="text-gray-500">Dashboard</span></>
-                                : activeTab === "jobs"
+                            {activeTab === "jobs"
                                 ? <>Job <span className="text-gray-500">Approvals</span></>
                                 : activeTab === "analytics"
                                 ? <>Analytics <span className="text-gray-500">Dashboard</span></>
@@ -421,9 +419,7 @@ const AdminContentPage = () => {
                             }
                         </h1>
                         <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500">
-                            {activeTab === "content"
-                                ? "Manage AI-generated viral content for multi-channel growth."
-                                : activeTab === "jobs"
+                            {activeTab === "jobs"
                                 ? "Review, approve, or reject recruiter job posting requests."
                                 : activeTab === "analytics"
                                 ? "Platform statistics, recruiters, and candidates overview."
@@ -435,20 +431,6 @@ const AdminContentPage = () => {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {activeTab === "content" && (
-                            <>
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={loading}
-                                    className="relative overflow-hidden rounded-2xl bg-black px-8 py-4 text-xs font-semibold uppercase tracking-[0.25em] text-white shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-2 relative z-10">
-                                        {loading ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />}
-                                        {loading ? (statusMsg || "Processing...") : "Generate Daily Batch"}
-                                    </div>
-                                </button>
-                            </>
-                        )}
                         <button
                             onClick={handleLogout}
                             className="rounded-2xl border border-red-100 bg-white p-4 text-red-500 shadow-sm transition hover:bg-red-50 hover:text-red-600 cursor-pointer"
@@ -461,15 +443,6 @@ const AdminContentPage = () => {
 
                 {/* ── Tab Navigation ──────────────────────────────────────── */}
                 <div className="mb-8 flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-black/10 bg-white p-1.5 shadow-sm w-fit">
-                    <button
-                        onClick={() => setActiveTab("content")}
-                        className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "content"
-                            ? "bg-black text-white shadow-md"
-                            : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
-                    >
-                        <Layers size={14} />
-                        News & LinkedIn Posts
-                    </button>
                     <button
                         onClick={() => setActiveTab("jobs")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "jobs"
@@ -509,86 +482,29 @@ const AdminContentPage = () => {
                 </div>
 
                 {/* ── Tab Content ─────────────────────────────────────────── */}
-                <AnimatePresence mode="wait">
-                    {activeTab === "content" ? (
-                        <motion.div
-                            key="content"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                                <div className="lg:col-span-5">
-                                    <div className="flex h-[700px] flex-col overflow-hidden rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
-                                        <div className="flex items-center justify-between mb-6 px-4">
-                                            <h3 className="text-sm font-semibold uppercase tracking-[0.25em] text-gray-400">Content Feed</h3>
-                                            <span className="rounded-full border border-black/10 bg-[#fbf8f3] px-3 py-1 text-[10px] font-semibold text-gray-500">
-                                                {content.length} Items
-                                            </span>
-                                        </div>
-                                        <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                                            <ContentList content={content} onSelect={setSelected} selectedId={selected?._id} />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="lg:col-span-7">
-                                    <div className="relative flex min-h-[700px] flex-col overflow-hidden rounded-[2.5rem] border border-black/10 bg-white p-8 shadow-sm">
-                                        <ContentDetail selected={selected} refresh={fetchContent} />
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ) : activeTab === "jobs" ? (
-                        <motion.div
-                            key="jobs"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm animate-fade">
-                                <JobRequestsPanel />
-                            </div>
-                        </motion.div>
-                    ) : activeTab === "analytics" ? (
-                        <motion.div
-                            key="analytics"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-[#fcfaf6] p-6 shadow-sm">
-                                <AnalyticsPanel />
-                            </div>
-                        </motion.div>
-                    ) : activeTab === "blogs" ? (
-                        <motion.div
-                            key="blogs"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
-                                <BlogPostsPanel />
-                            </div>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="transcripts"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
-                                <TranscriptListPanel />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <div className={activeTab === "jobs" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
+                        <JobRequestsPanel />
+                    </div>
+                </div>
+
+                <div className={activeTab === "transcripts" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
+                        <TranscriptListPanel />
+                    </div>
+                </div>
+
+                <div className={activeTab === "blogs" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-none rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
+                        <BlogPostsPanel />
+                    </div>
+                </div>
+
+                <div className={activeTab === "analytics" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-[#fcfaf6] p-6 shadow-sm">
+                        <AnalyticsPanel />
+                    </div>
+                </div>
             </main>
         </div>
     );
