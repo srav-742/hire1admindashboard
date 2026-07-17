@@ -716,7 +716,8 @@ export default function BlogPostsPanel() {
             fetchDashboardData();
         } catch (err) {
             console.error('Publish failed:', err);
-            triggerFeedback('❌ Failed to publish post', 'error');
+            const errMsg = err.response?.data?.message || err.response?.data?.error?.message || err.message || '';
+            triggerFeedback(`❌ Failed to publish post: ${errMsg}`, 'error');
         } finally {
             setPublishing(false);
         }
