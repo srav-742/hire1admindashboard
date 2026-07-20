@@ -31,13 +31,13 @@ export const getAuthHeaders = async () => {
         'X-Client-Secret': 'h1p_secret_2026_gateway_key'
     };
 
-    // Check if we have a local storage admin session first (Priority)
+    // Priority 1: Check if we have an admin user in localStorage
     const storedUserStr = localStorage.getItem('user');
     if (storedUserStr) {
         try {
             const storedUser = JSON.parse(storedUserStr);
-            const userId = storedUser?.uid || storedUser?._id || (storedUser?.role === 'admin' ? 'SQKunisKWhb49NUPKuk9R38iwQN2' : null);
-            if (userId) {
+            if (storedUser?.role === 'admin') {
+                const userId = storedUser?.uid || storedUser?._id || 'SQKunisKWhb49NUPKuk9R38iwQN2';
                 return {
                     'x-user-id': userId,
                     ...clientHeaders
@@ -48,21 +48,22 @@ export const getAuthHeaders = async () => {
         }
     }
 
-    // 1. Try Firebase Auth (Priority for seeker/recruiter if any)
+    // Priority 2: Try Firebase Auth user if active
     const user = auth.currentUser;
     if (user) {
-        const token = await user.getIdToken();
-        return {
-            'Authorization': `Bearer ${token}`,
-            'x-user-id': user.uid,
-            ...clientHeaders
-        };
+        try {
+            const token = await user.getIdToken();
+            return {
+                'Authorization': `Bearer ${token}`,
+                'x-user-id': user.uid,
+                ...clientHeaders
+            };
+        } catch (e) {}
     }
 
-    // Default Fallback for Admin Dashboard operations
+    // Default Fallback: Admin User ID for Admin Dashboard operations
     return {
         'x-user-id': 'SQKunisKWhb49NUPKuk9R38iwQN2',
         ...clientHeaders
     };
-
 };

@@ -46,10 +46,11 @@ const JobRequestsPanel = () => {
             setStatusMsg("✅ Job approved and now live!");
             await fetchJobs();
         } catch (err) {
-            setStatusMsg("❌ Failed to approve job.");
+            console.error("[ADMIN-APPROVE] Error:", err);
+            setStatusMsg(`❌ Failed to approve job: ${err.response?.data?.message || err.message}`);
         } finally {
             setActionLoading(null);
-            setTimeout(() => setStatusMsg(""), 3000);
+            setTimeout(() => setStatusMsg(""), 4000);
         }
     };
 
@@ -62,16 +63,17 @@ const JobRequestsPanel = () => {
         setActionLoading(jobId + "_reject");
         try {
             const headers = await getAuthHeaders();
-            await axios.patch(`${API_URL}/jobs/${jobId}/reject`, { reason: rejectReason }, { headers });
-            setStatusMsg("Job rejected with reason sent to recruiter.");
+            await axios.patch(`${API_URL}/jobs/${jobId}/reject`, { reason: rejectReason.trim() }, { headers });
+            setStatusMsg("✅ Job rejected successfully.");
             setRejectingJobId(null);
             setRejectReason("");
             await fetchJobs();
         } catch (err) {
-            setStatusMsg("❌ Failed to reject job.");
+            console.error("[ADMIN-REJECT] Error:", err);
+            setStatusMsg(`❌ Failed to reject job: ${err.response?.data?.message || err.message}`);
         } finally {
             setActionLoading(null);
-            setTimeout(() => setStatusMsg(""), 3000);
+            setTimeout(() => setStatusMsg(""), 4000);
         }
     };
 
@@ -84,192 +86,8 @@ const JobRequestsPanel = () => {
         rejected: { label: "Rejected", icon: <XCircle size={12} />, color: "text-red-600" }
     };
 
-    const StatusBadge = ({ status }) => {
-        if (status === 'approved') return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
-                <CheckCircle size={10} /> Approved
-            </span>
-        );
-        if (status === 'rejected') return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-600 text-[10px] font-black uppercase tracking-widest">
-                <XCircle size={10} /> Rejected
-            </span>
-        );
-        return (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 text-[10px] font-black uppercase tracking-widest">
-                <Clock size={10} /> Pending Review
-            </span>
-        );
-    };
+    // StatusBadge and JobCard have been moved outside JobRequestsPanel below to prevent losing focus on typing rejection reason.
 
-    const JobCard = ({ job }) => {
-        const isExpanded = expandedJobId === job._id;
-        const isRejectingThis = rejectingJobId === job._id;
-
-        return (
-            <motion.div
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`rounded-2xl border transition-all ${job.status === 'pending_approval'
-                    ? 'border-amber-500/20 bg-amber-500/5'
-                    : job.status === 'approved'
-                        ? 'border-emerald-500/10 bg-emerald-500/5'
-                        : 'border-red-500/10 bg-red-500/5'}`}
-            >
-                {/* Header */}
-                <div className="p-5 flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <StatusBadge status={job.status} />
-                            <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-                                {new Date(job.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
-                        <h3 className="text-gray-950 font-black text-lg leading-tight truncate">{job.title}</h3>
-                        <p className="text-gray-500 text-xs font-medium mt-0.5">
-                            {job.company || "—"} · {job.location || "—"} · {job.type || "—"}
-                        </p>
-                        {job.recruiter && (
-                            <p className="text-gray-500 text-[11px] mt-1">
-                                Posted by: <span className="text-gray-700 font-semibold">{job.recruiter.name || job.recruiterId}</span>
-                            </p>
-                        )}
-                    </div>
-                    <button
-                        onClick={() => setExpandedJobId(isExpanded ? null : job._id)}
-                        className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-black/10 text-gray-500 transition-all"
-                    >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                    </button>
-                </div>
-
-                {/* Expanded Details */}
-                <AnimatePresence>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="px-5 pb-5 space-y-4 border-t border-black/10 pt-4">
-                                {/* Job Description */}
-                                {job.description && (
-                                    <div>
-                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Description</p>
-                                        <p className="text-gray-700 text-sm leading-relaxed max-h-32 overflow-y-auto">{job.description}</p>
-                                    </div>
-                                )}
-
-                                {/* Skills */}
-                                {job.skills?.length > 0 && (
-                                    <div>
-                                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Required Skills</p>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {job.skills.map(s => (
-                                                <span key={s} className="px-2.5 py-1 rounded-lg bg-gray-100 border border-black/10 text-gray-700 text-[11px] font-bold">{s}</span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Configuration Summary */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
-                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Experience</p>
-                                        <p className="text-gray-950 text-xs font-bold">{job.experienceLevel || "Any"}</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
-                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Resume Match</p>
-                                        <p className="text-emerald-600 text-xs font-bold">{job.minPercentage || 60}%</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
-                                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Assessment</p>
-                                        <p className={`text-xs font-bold ${job.assessment?.enabled ? 'text-orange-600' : 'text-gray-400'}`}>
-                                            {job.assessment?.enabled ? `${job.assessment.totalQuestions || 10} Qs` : 'Off'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Special Instructions */}
-                                {job.specialInstructions && (
-                                    <div>
-                                        <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-2">Special AI Instructions</p>
-                                        <p className="text-blue-700/80 text-xs leading-relaxed bg-blue-500/5 border border-blue-500/10 rounded-xl p-3">{job.specialInstructions}</p>
-                                    </div>
-                                )}
-
-                                {/* Existing rejection reason */}
-                                {job.status === 'rejected' && job.adminFeedback?.reason && (
-                                    <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20">
-                                        <AlertCircle size={14} className="text-red-600 shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="text-red-600 text-[10px] font-black uppercase tracking-widest mb-0.5">Rejection Reason</p>
-                                            <p className="text-red-700 text-xs">{job.adminFeedback.reason}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                {job.status === 'pending_approval' && (
-                                    <div className="pt-2 space-y-3">
-                                        {!isRejectingThis ? (
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={() => handleApprove(job._id)}
-                                                    disabled={!!actionLoading}
-                                                    className="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-500/10 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                >
-                                                    {actionLoading === job._id + "_approve" ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
-                                                    Approve & Publish
-                                                </button>
-                                                <button
-                                                    onClick={() => setRejectingJobId(job._id)}
-                                                    disabled={!!actionLoading}
-                                                    className="flex-1 py-3 rounded-2xl bg-red-600/80 hover:bg-red-600 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                >
-                                                    <XCircle size={14} /> Reject
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                                                <p className="text-red-600 text-xs font-bold uppercase tracking-widest">Enter rejection reason (required):</p>
-                                                <textarea
-                                                    value={rejectReason}
-                                                    onChange={(e) => setRejectReason(e.target.value)}
-                                                    placeholder="e.g. Job description is too vague..."
-                                                    rows={3}
-                                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-red-500/30 focus:border-red-500/60 outline-none text-gray-700 text-sm resize-none transition-all"
-                                                />
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        onClick={() => handleReject(job._id)}
-                                                        disabled={!!actionLoading}
-                                                        className="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {actionLoading === job._id + "_reject" ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                                                        Confirm Rejection
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { setRejectingJobId(null); setRejectReason(""); }}
-                                                        className="px-5 py-3 rounded-2xl bg-white border border-black/10 text-gray-500 hover:text-gray-800 text-xs font-bold transition-all"
-                                                    >
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
-        );
-    };
 
     return (
         <div className="space-y-6">
@@ -326,7 +144,22 @@ const JobRequestsPanel = () => {
                         </h3>
                         {filteredJobs.length > 0 ? (
                             <div className="space-y-3">
-                                {filteredJobs.map(job => <JobCard key={job._id} job={job} />)}
+                                {filteredJobs.map(job => (
+                                    <JobCard
+                                        key={job._id}
+                                        job={job}
+                                        isExpanded={expandedJobId === job._id}
+                                        onToggleExpand={() => setExpandedJobId(expandedJobId === job._id ? null : job._id)}
+                                        isRejecting={rejectingJobId === job._id}
+                                        onStartReject={() => setRejectingJobId(job._id)}
+                                        onCancelReject={() => { setRejectingJobId(null); setRejectReason(""); }}
+                                        rejectReason={rejectReason}
+                                        onRejectReasonChange={(val) => setRejectReason(val)}
+                                        actionLoading={actionLoading}
+                                        onApprove={handleApprove}
+                                        onReject={handleReject}
+                                    />
+                                ))}
                             </div>
                         ) : (
                             <div className="text-center py-20 text-gray-500 bg-gray-50 rounded-3xl border border-dashed border-black/10">
@@ -347,6 +180,206 @@ const JobRequestsPanel = () => {
                 </>
             )}
         </div>
+    );
+};
+
+// ─── Status Badge Component ──────────────────────────────────────────────────
+const StatusBadge = ({ status }) => {
+    if (status === 'approved') return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+            <CheckCircle size={10} /> Approved
+        </span>
+    );
+    if (status === 'rejected') return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-600 text-[10px] font-black uppercase tracking-widest">
+            <XCircle size={10} /> Rejected
+        </span>
+    );
+    return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 text-[10px] font-black uppercase tracking-widest">
+            <Clock size={10} /> Pending Review
+        </span>
+    );
+};
+
+// ─── Job Card Component ──────────────────────────────────────────────────────
+const JobCard = ({
+    job,
+    isExpanded,
+    onToggleExpand,
+    isRejecting,
+    onStartReject,
+    onCancelReject,
+    rejectReason,
+    onRejectReasonChange,
+    actionLoading,
+    onApprove,
+    onReject
+}) => {
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-2xl border transition-all ${job.status === 'pending_approval'
+                ? 'border-amber-500/20 bg-amber-500/5'
+                : job.status === 'approved'
+                    ? 'border-emerald-500/10 bg-emerald-500/5'
+                    : 'border-red-500/10 bg-red-500/5'}`}
+        >
+            {/* Header */}
+            <div className="p-5 flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <StatusBadge status={job.status} />
+                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
+                            {new Date(job.createdAt).toLocaleDateString()}
+                        </span>
+                    </div>
+                    <h3 className="text-gray-950 font-black text-lg leading-tight truncate">{job.title}</h3>
+                    <p className="text-gray-500 text-xs font-medium mt-0.5">
+                        {job.company || "—"} · {job.location || "—"} · {job.type || "—"}
+                    </p>
+                    {job.recruiter && (
+                        <p className="text-gray-500 text-[11px] mt-1">
+                            Posted by: <span className="text-gray-700 font-semibold">{job.recruiter.name || job.recruiterId}</span>
+                        </p>
+                    )}
+                </div>
+                <button
+                    onClick={onToggleExpand}
+                    className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-black/10 text-gray-500 transition-all"
+                >
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+            </div>
+
+            {/* Expanded Details */}
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-5 pb-5 space-y-4 border-t border-black/10 pt-4">
+                            {/* Job Description */}
+                            {job.description && (
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Description</p>
+                                    <p className="text-gray-700 text-sm leading-relaxed max-h-32 overflow-y-auto">{job.description}</p>
+                                </div>
+                            )}
+
+                            {/* Skills */}
+                            {job.skills?.length > 0 && (
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Required Skills</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {job.skills.map(s => (
+                                            <span key={s} className="px-2.5 py-1 rounded-lg bg-gray-100 border border-black/10 text-gray-700 text-[11px] font-bold">{s}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Configuration Summary */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Experience</p>
+                                    <p className="text-gray-950 text-xs font-bold">{job.experienceLevel || "Any"}</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Resume Match</p>
+                                    <p className="text-emerald-600 text-xs font-bold">{job.minPercentage || 60}%</p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-gray-50 border border-black/10">
+                                    <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1">Assessment</p>
+                                    <p className={`text-xs font-bold ${job.assessment?.enabled ? 'text-orange-600' : 'text-gray-400'}`}>
+                                        {job.assessment?.enabled ? `${job.assessment.totalQuestions || 10} Qs` : 'Off'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Special Instructions */}
+                            {job.specialInstructions && (
+                                <div>
+                                    <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-2">Special AI Instructions</p>
+                                    <p className="text-blue-700/80 text-xs leading-relaxed bg-blue-500/5 border border-blue-500/10 rounded-xl p-3">{job.specialInstructions}</p>
+                                </div>
+                            )}
+
+                            {/* Existing Rejection Reason */}
+                            {job.status === 'rejected' && job.adminFeedback?.reason && (
+                                <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                                    <AlertCircle size={14} className="text-red-600 shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="text-red-600 text-[10px] font-black uppercase tracking-widest mb-0.5">Rejection Reason</p>
+                                        <p className="text-red-700 text-xs">{job.adminFeedback.reason}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="pt-2 space-y-3">
+                                {!isRejecting ? (
+                                    <div className="flex gap-3">
+                                        {job.status !== 'approved' && (
+                                            <button
+                                                onClick={() => onApprove(job._id)}
+                                                disabled={!!actionLoading}
+                                                className="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-emerald-500/10 disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {actionLoading === job._id + "_approve" ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                                                {job.status === 'rejected' ? 'Re-Approve & Publish' : 'Approve & Publish'}
+                                            </button>
+                                        )}
+                                        {job.status !== 'rejected' && (
+                                            <button
+                                                onClick={onStartReject}
+                                                disabled={!!actionLoading}
+                                                className="flex-1 py-3 rounded-2xl bg-red-600/80 hover:bg-red-600 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                <XCircle size={14} /> Reject
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                                        <p className="text-red-600 text-xs font-bold uppercase tracking-widest">Enter Rejection Reason (Required):</p>
+                                        <textarea
+                                            value={rejectReason}
+                                            onChange={(e) => onRejectReasonChange(e.target.value)}
+                                            placeholder="e.g. Job description is too vague..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-red-500/30 focus:border-red-500/60 outline-none text-gray-700 text-sm resize-none transition-all"
+                                        />
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => onReject(job._id)}
+                                                disabled={!!actionLoading}
+                                                className="flex-1 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {actionLoading === job._id + "_reject" ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                                Confirm Rejection
+                                            </button>
+                                            <button
+                                                onClick={onCancelReject}
+                                                className="px-5 py-3 rounded-2xl bg-white border border-black/10 text-gray-500 hover:text-gray-800 text-xs font-bold transition-all"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
