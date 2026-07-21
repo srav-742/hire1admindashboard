@@ -95,10 +95,11 @@ const CandidateTranscriptPage = () => {
   );
 
   const { candidate, job, application, resume, assessment, interview, scores, generatedAt } = data;
+  // Use the single source of truth from the backend's unified score calculator
   const dynResume = scores?.resumeMatch || 0;
-  const dynAssessment = assessment && assessment.totalQuestions > 0 ? Math.round((assessment.correctAnswers / assessment.totalQuestions) * 20) : (scores?.assessmentScore || 0);
-  const dynInterview = interview?.questions?.length > 0 ? Math.round((interview.questions.reduce((s, q) => s + (typeof q.marks === 'number' ? q.marks : 0), 0) / (interview.questions.length * 10)) * 70) : (scores?.interviewScore || 0);
-  const fs = dynResume + dynAssessment + dynInterview;
+  const dynAssessment = scores?.assessmentScore || 0;
+  const dynInterview = scores?.interviewScore || 0;
+  const fs = scores?.finalScore || 0;
   
   const verdict = fs >= 80 ? { l: 'Strongly Recommended', c: 'text-emerald-600', b: 'bg-emerald-50 border-emerald-200' }
     : fs >= 60 ? { l: 'Recommended', c: 'text-blue-600', b: 'bg-blue-50 border-blue-200' }
@@ -147,7 +148,19 @@ const CandidateTranscriptPage = () => {
       
 
       <div className='no-print sticky top-0 z-50 bg-gray-50/90 backdrop-blur border-b border-black/10 px-6 py-4 flex items-center justify-between'>
-        <button onClick={() => navigate('/admin')} className='flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold text-sm'><ArrowLeft size={18} />Back to Admin</button>
+        <button 
+          onClick={() => {
+            sessionStorage.setItem('admin_active_tab', 'transcripts');
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/admin?tab=transcripts');
+            }
+          }} 
+          className='flex items-center gap-2 text-gray-600 hover:text-gray-900 font-bold text-sm'
+        >
+          <ArrowLeft size={18} />Back to Transcripts
+        </button>
         <button onClick={() => window.print()} className='flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-md'><Printer size={15} />Download PDF</button>
       </div>
       
@@ -264,7 +277,7 @@ const CandidateTranscriptPage = () => {
         {assessment && (
           <Sec title='Skill Assessment Transcript' icon={<Code size={16} />} grad='from-orange-500 to-amber-500'>
             <div className='flex items-center gap-8 mb-6 p-5 rounded-2xl bg-orange-50 border border-orange-200'>
-              <div className='text-center'><p className='text-4xl font-black text-orange-600'>{assessment.totalQuestions > 0 ? `${Math.round((assessment.correctAnswers / assessment.totalQuestions) * 20)}/20` : 'N/A'}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Score</p></div>
+              <div className='text-center'><p className='text-4xl font-black text-orange-600'>{dynAssessment > 0 || assessment.totalQuestions > 0 ? `${dynAssessment}/20` : 'N/A'}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Score</p></div>
               <div className='text-center'><p className='text-4xl font-black text-gray-900'>{assessment.correctAnswers}/{assessment.totalQuestions}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Correct</p></div>
             </div>
             <div className='space-y-4'>
@@ -288,7 +301,7 @@ const CandidateTranscriptPage = () => {
         {interview?.questions?.length > 0 && (
           <Sec title='AI Interview Transcript' icon={<MessageSquare size={16} />} grad='from-purple-500 to-indigo-500'>
             <div className='flex items-center gap-8 mb-6 p-5 rounded-2xl bg-purple-50 border border-purple-200'>
-              <div className='text-center'><p className='text-4xl font-black text-purple-600'>{interview.questions.length > 0 ? `${Math.round((interview.questions.reduce((s, q) => s + (typeof q.marks === 'number' ? q.marks : 0), 0) / (interview.questions.length * 10)) * 70)}/70` : 'N/A'}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Score</p></div>
+              <div className='text-center'><p className='text-4xl font-black text-purple-600'>{dynInterview > 0 || interview.questions.length > 0 ? `${dynInterview}/70` : 'N/A'}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Score</p></div>
               <div className='text-center'><p className='text-4xl font-black text-gray-900'>{interview.totalQuestions}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Questions</p></div>
             </div>
             <div className='space-y-5'>

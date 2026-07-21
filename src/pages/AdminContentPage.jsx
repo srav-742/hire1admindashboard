@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, RefreshCw, Layers, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Loader2, LogOut, FileText, BarChart } from "lucide-react";
 import { getAllContent, generateContent } from "../services/contentService";
@@ -384,7 +384,26 @@ const JobCard = ({
 };
 
 const AdminContentPage = () => {
-    const [activeTab, setActiveTab] = useState("jobs");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabFromUrl = searchParams.get("tab");
+    const [activeTab, setActiveTab] = useState(() => {
+        return tabFromUrl || sessionStorage.getItem("admin_active_tab") || "jobs";
+    });
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        sessionStorage.setItem("admin_active_tab", tab);
+        setSearchParams({ tab });
+    };
+
+    useEffect(() => {
+        const currentTabFromUrl = searchParams.get("tab");
+        if (currentTabFromUrl && currentTabFromUrl !== activeTab) {
+            setActiveTab(currentTabFromUrl);
+            sessionStorage.setItem("admin_active_tab", currentTabFromUrl);
+        }
+    }, [searchParams]);
+
     const [content, setContent] = useState([]);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -477,7 +496,7 @@ const AdminContentPage = () => {
                 {/* ── Tab Navigation ──────────────────────────────────────── */}
                 <div className="mb-8 flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-black/10 bg-white p-1.5 shadow-sm w-fit">
                     <button
-                        onClick={() => setActiveTab("jobs")}
+                        onClick={() => handleTabChange("jobs")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "jobs"
                             ? "bg-black text-white shadow-md"
                             : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
@@ -486,7 +505,7 @@ const AdminContentPage = () => {
                         Job Posting Requests
                     </button>
                     <button
-                        onClick={() => setActiveTab("transcripts")}
+                        onClick={() => handleTabChange("transcripts")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "transcripts"
                             ? "bg-black text-white shadow-md"
                             : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
@@ -495,7 +514,7 @@ const AdminContentPage = () => {
                         Candidate Transcripts
                     </button>
                     <button
-                        onClick={() => setActiveTab("blogs")}
+                        onClick={() => handleTabChange("blogs")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "blogs"
                             ? "bg-black text-white shadow-md"
                             : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
@@ -504,7 +523,7 @@ const AdminContentPage = () => {
                         Blog Posts
                     </button>
                     <button
-                        onClick={() => setActiveTab("analytics")}
+                        onClick={() => handleTabChange("analytics")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "analytics"
                             ? "bg-black text-white shadow-md"
                             : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}

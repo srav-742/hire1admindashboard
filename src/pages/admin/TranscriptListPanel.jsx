@@ -22,7 +22,7 @@ const ScorePill = ({ value, color, max = 100, showMax = true }) => (
 const TranscriptListPanel = () => {
     const navigate = useNavigate();
     const [jobs, setJobs] = useState([]);
-    const [selectedJobId, setSelectedJobId] = useState('');
+    const [selectedJobId, setSelectedJobId] = useState(() => sessionStorage.getItem('admin_selected_job_id') || '');
     const [candidates, setCandidates] = useState([]);
     const [loadingJobs, setLoadingJobs] = useState(true);
     const [loadingCandidates, setLoadingCandidates] = useState(false);
@@ -37,7 +37,15 @@ const TranscriptListPanel = () => {
                 const res = await axios.get(`${API_URL}/jobs/admin/all`, { headers });
                 const approved = (Array.isArray(res.data) ? res.data : []).filter(j => j.status === 'approved');
                 setJobs(approved);
-                if (approved.length > 0) setSelectedJobId(approved[0]._id);
+                if (approved.length > 0) {
+                    const savedJobId = sessionStorage.getItem('admin_selected_job_id');
+                    if (savedJobId && approved.some(j => j._id === savedJobId)) {
+                        setSelectedJobId(savedJobId);
+                    } else {
+                        setSelectedJobId(approved[0]._id);
+                        sessionStorage.setItem('admin_selected_job_id', approved[0]._id);
+                    }
+                }
             } catch (err) {
                 console.error('[TRANSCRIPT-PANEL] Failed to load jobs:', err);
             } finally {
@@ -92,7 +100,11 @@ const TranscriptListPanel = () => {
                     ) : (
                         <select
                             value={selectedJobId}
-                            onChange={e => setSelectedJobId(e.target.value)}
+                            onChange={e => {
+                                const val = e.target.value;
+                                setSelectedJobId(val);
+                                sessionStorage.setItem('admin_selected_job_id', val);
+                            }}
                             className="w-full md:w-96 px-4 py-3 rounded-2xl bg-[#fbf8f3] border border-black/10 text-gray-900 text-sm font-semibold outline-none focus:border-blue-500/50 transition-all"
                         >
                             {jobs.map(j => (
@@ -121,8 +133,12 @@ const TranscriptListPanel = () => {
                         <option value="resumeScore">Sort: Resume Match</option>
                         <option value="assessmentScore">Sort: Assessment</option>
                         <option value="interviewScore">Sort: Interview</option>
+<<<<<<< HEAD
                         <option value="proctoringScore">Sort: Integrity Trust Score</option>
+=======
+>>>>>>> dc9211d (feat: sync transcript score display in admin dashboard)
                         <option value="finalScore">Sort: Final Score</option>
+                        <option value="proctoringScore">Sort: Proctoring</option>
                     </select>
                     {sortBy !== 'none' && (
                         <button
@@ -194,17 +210,21 @@ const TranscriptListPanel = () => {
                             <ScorePill value={c.resumeScore} color="bg-blue-500/5 border-blue-500/20 text-blue-600" max={10} />
                             <ScorePill value={c.assessmentScore} color="bg-orange-500/5 border-orange-500/20 text-orange-600" max={20} />
                             <ScorePill value={c.interviewScore} color="bg-purple-500/5 border-purple-500/20 text-purple-600" max={70} />
+<<<<<<< HEAD
                             <ScorePill value={c.proctoringScore} color="bg-red-500/5 border-red-500/20 text-red-600" max={100} showMax={true} />
+=======
+>>>>>>> dc9211d (feat: sync transcript score display in admin dashboard)
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gray-50 border border-black/10 font-black text-gray-800 text-sm">
-                                {c.finalScore ? `${Math.round(c.finalScore)}/100` : <span className="text-[10px] font-bold text-gray-500">N/A</span>}
+                                {c.finalScore !== null && c.finalScore !== undefined ? `${Math.round(c.finalScore)}/100` : <span className="text-[10px] font-bold text-gray-500">N/A</span>}
                             </div>
+                            <ScorePill value={c.proctoringScore ?? 0} color={c.proctoringScore > 0 ? "bg-red-500/10 border-red-500/30 text-red-600" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"} showMax={false} />
                         </div>
                         <div className="hidden lg:flex flex-col gap-1 text-[9px] text-gray-500 font-black uppercase tracking-widest w-10 text-center">
                             <span className="text-blue-600">RES</span>
                             <span className="text-orange-600">ASS</span>
                             <span className="text-purple-600">INT</span>
-                            <span className="text-red-600">PRC</span>
                             <span className="text-gray-900">FIN</span>
+                            <span className="text-red-600">PROC</span>
                         </div>
 
                         {/* View Button */}
