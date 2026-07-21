@@ -133,12 +133,8 @@ const TranscriptListPanel = () => {
                         <option value="resumeScore">Sort: Resume Match</option>
                         <option value="assessmentScore">Sort: Assessment</option>
                         <option value="interviewScore">Sort: Interview</option>
-<<<<<<< HEAD
-                        <option value="proctoringScore">Sort: Integrity Trust Score</option>
-=======
->>>>>>> dc9211d (feat: sync transcript score display in admin dashboard)
                         <option value="finalScore">Sort: Final Score</option>
-                        <option value="proctoringScore">Sort: Proctoring</option>
+                        <option value="proctoringScore">Sort: Integrity Trust Score</option>
                     </select>
                     {sortBy !== 'none' && (
                         <button
@@ -205,15 +201,10 @@ const TranscriptListPanel = () => {
                             </div>
                         </div>
 
-                        {/* Scores */}
                         <div className="hidden lg:flex items-center gap-2">
                             <ScorePill value={c.resumeScore} color="bg-blue-500/5 border-blue-500/20 text-blue-600" max={10} />
                             <ScorePill value={c.assessmentScore} color="bg-orange-500/5 border-orange-500/20 text-orange-600" max={20} />
                             <ScorePill value={c.interviewScore} color="bg-purple-500/5 border-purple-500/20 text-purple-600" max={70} />
-<<<<<<< HEAD
-                            <ScorePill value={c.proctoringScore} color="bg-red-500/5 border-red-500/20 text-red-600" max={100} showMax={true} />
-=======
->>>>>>> dc9211d (feat: sync transcript score display in admin dashboard)
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gray-50 border border-black/10 font-black text-gray-800 text-sm">
                                 {c.finalScore !== null && c.finalScore !== undefined ? `${Math.round(c.finalScore)}/100` : <span className="text-[10px] font-bold text-gray-500">N/A</span>}
                             </div>
