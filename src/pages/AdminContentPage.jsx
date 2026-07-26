@@ -464,20 +464,20 @@ const AdminContentPage = () => {
                             {activeTab === "jobs"
                                 ? <>Job <span className="text-gray-500">Approvals</span></>
                                 : activeTab === "analytics"
-                                ? <>Analytics <span className="text-gray-500">Dashboard</span></>
-                                : activeTab === "blogs"
-                                ? <>Blog <span className="text-gray-500">Management</span></>
-                                : <>Candidate <span className="text-gray-500">Transcripts</span></>
+                                    ? <>Analytics <span className="text-gray-500">Dashboard</span></>
+                                    : activeTab === "blogs"
+                                        ? <>Blog <span className="text-gray-500">Management</span></>
+                                        : <>Candidate <span className="text-gray-500">Transcripts</span></>
                             }
                         </h1>
                         <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500">
                             {activeTab === "jobs"
                                 ? "Review, approve, or reject recruiter job posting requests."
                                 : activeTab === "analytics"
-                                ? "Platform statistics, recruiters, and candidates overview."
-                                : activeTab === "blogs"
-                                ? "Create, publish, edit, and schedule dynamic blog posts."
-                                : "Review candidate interview transcripts."
+                                    ? "Platform statistics, recruiters, and candidates overview."
+                                    : activeTab === "blogs"
+                                        ? "Create, publish, edit, and schedule dynamic blog posts."
+                                        : "Review candidate interview transcripts."
                             }
                         </p>
                     </div>
