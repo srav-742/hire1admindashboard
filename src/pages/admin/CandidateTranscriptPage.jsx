@@ -1,9 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Component } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL, getAuthHeaders } from '../../firebase';
 import { motion } from 'framer-motion';
 import { ArrowLeft, User, Mail, Phone, MapPin, CheckCircle, XCircle, Award, FileText, Code, MessageSquare, BarChart2, Printer, ExternalLink, ShieldAlert, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
+
+// ── Error Boundary ──────────────────────────────────────────────────────
+class TranscriptErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('[TRANSCRIPT-CRASH]', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+          <div className='text-center text-gray-900 max-w-md'>
+            <XCircle size={48} className='mx-auto mb-4 text-red-500' />
+            <p className='font-bold text-xl mb-2'>Transcript Rendering Error</p>
+            <p className='text-sm text-gray-500 mb-4'>{this.state.error?.message || 'An unexpected error occurred while rendering the transcript.'}</p>
+            <button onClick={() => window.history.back()} className='px-6 py-3 bg-black/10 rounded-xl font-bold'>Go Back</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const ScoreRing = ({ value, color = '#3b82f6', size = 80, max = 100 }) => {
   const r = 28;
@@ -47,9 +76,20 @@ const CandidateTranscriptPage = () => {
       try {
         const h = await getAuthHeaders();
         const r = await axios.get(API_URL + '/transcripts/' + applicationId, { headers: h });
-        setData(r.data);
+        // Defensive: ensure critical nested objects exist
+        const d = r.data || {};
+        if (!d.candidate) d.candidate = {};
+        if (!d.job) d.job = {};
+        if (!d.application) d.application = {};
+        if (!d.scores) d.scores = {};
+        if (!d.interview) d.interview = { questions: [], proctoringViolations: [] };
+        if (!d.interview.questions) d.interview.questions = [];
+        if (!d.interview.proctoringViolations) d.interview.proctoringViolations = [];
+        if (d.assessment && !Array.isArray(d.assessment.answers)) d.assessment.answers = [];
+        setData(d);
       } catch (e) {
-        setError(e.response?.data?.message || 'Failed to load');
+        console.error('[TRANSCRIPT] Load error:', e);
+        setError(e.response?.data?.message || e.message || 'Failed to load transcript');
       } finally {
         setLoading(false);
       }
@@ -234,11 +274,11 @@ const CandidateTranscriptPage = () => {
                 </div>
               </div>
             )}
-            {resume.profile.skills && (
+            {resume.profile.skills && typeof resume.profile.skills === 'object' && (
               <div className='mb-5'>
                 <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3'>Skills</p>
                 <div className='flex flex-wrap gap-1.5'>
-                  {[...(resume.profile.skills.programming || []), ...(resume.profile.skills.frameworks || []), ...(resume.profile.skills.databases || []), ...(resume.profile.skills.tools || [])].map((s, i) => (
+                  {[...(Array.isArray(resume.profile.skills.programming) ? resume.profile.skills.programming : []), ...(Array.isArray(resume.profile.skills.frameworks) ? resume.profile.skills.frameworks : []), ...(Array.isArray(resume.profile.skills.databases) ? resume.profile.skills.databases : []), ...(Array.isArray(resume.profile.skills.tools) ? resume.profile.skills.tools : [])].map((s, i) => (
                     <span key={i} className='px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-800'>{s}</span>
                   ))}
                 </div>
@@ -281,16 +321,16 @@ const CandidateTranscriptPage = () => {
               <div className='text-center'><p className='text-4xl font-black text-gray-900'>{assessment.correctAnswers}/{assessment.totalQuestions}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Correct</p></div>
             </div>
             <div className='space-y-4'>
-              {assessment.answers.map((a, i) => (
+              {(Array.isArray(assessment.answers) ? assessment.answers : []).map((a, i) => (
                 <div key={i} className={'p-4 rounded-2xl border bg-white shadow-sm ' + (a.isCorrect ? 'border-emerald-200' : 'border-red-200')}>
                   <div className='flex items-center justify-between mb-2'>
-                    <div className='flex items-center gap-2'>{a.isCorrect ? <CheckCircle size={15} className='text-emerald-500' /> : <XCircle size={15} className='text-red-500' />}<span className='text-[10px] font-black uppercase tracking-widest text-gray-500'>Q{i + 1} - {a.skill} - {a.questionType?.toUpperCase()}</span></div>
+                    <div className='flex items-center gap-2'>{a.isCorrect ? <CheckCircle size={15} className='text-emerald-500' /> : <XCircle size={15} className='text-red-500' />}<span className='text-[10px] font-black uppercase tracking-widest text-gray-500'>Q{i + 1} - {a.skill || 'General'} - {(a.questionType || 'mcq').toUpperCase()}</span></div>
                     <span className={'text-xs font-black ' + (a.isCorrect ? 'text-emerald-600' : 'text-red-600')}>{a.isCorrect ? 'Correct' : 'Incorrect'}</span>
                   </div>
-                  <p className='text-sm font-bold text-gray-900 mb-2'>{a.question}</p>
+                  <p className='text-sm font-bold text-gray-900 mb-2'>{a.question || 'Question not available'}</p>
                   <div className='grid md:grid-cols-2 gap-2 text-xs'>
-                    <div className='p-2 rounded-lg bg-gray-50 border border-gray-100'><span className='font-black text-gray-600'>Your Answer: </span><span className='text-gray-800'>{String(a.userAnswer || '--')}</span></div>
-                    <div className='p-2 rounded-lg bg-gray-50 border border-gray-100'><span className='font-black text-gray-600'>Correct: </span><span className='font-bold text-emerald-600'>{String(a.correctAnswer || '--')}</span></div>
+                    <div className='p-2 rounded-lg bg-gray-50 border border-gray-100'><span className='font-black text-gray-600'>Your Answer: </span><span className='text-gray-800'>{String(a.userAnswer ?? '--')}</span></div>
+                    <div className='p-2 rounded-lg bg-gray-50 border border-gray-100'><span className='font-black text-gray-600'>Correct: </span><span className='font-bold text-emerald-600'>{String(a.correctAnswer ?? '--')}</span></div>
                   </div>
                 </div>
               ))}
@@ -305,11 +345,11 @@ const CandidateTranscriptPage = () => {
               <div className='text-center'><p className='text-4xl font-black text-gray-900'>{interview.totalQuestions}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Questions</p></div>
             </div>
             <div className='space-y-5'>
-              {interview.questions.map((q, i) => (
+              {(Array.isArray(interview.questions) ? interview.questions : []).map((q, i) => (
                 <div key={i} className='rounded-2xl border border-purple-200 bg-white shadow-sm overflow-hidden'>
                   <div className='flex items-center justify-between px-5 py-3 bg-purple-50 border-b border-purple-100'>
-                    <div className='flex items-center gap-3'><div className='w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-black text-sm'>{q.questionNumber}</div><span className='text-[10px] font-black uppercase tracking-widest text-purple-700'>Question {q.questionNumber}</span></div>
-                    <div className='flex items-center gap-2'><span className='text-sm font-black text-gray-900'>{typeof q.marks === 'number' ? q.marks.toFixed(1) : 0}/10</span><span className='text-[10px] text-purple-600'>({q.score || 0}%)</span></div>
+                    <div className='flex items-center gap-3'><div className='w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-black text-sm'>{q.questionNumber || i + 1}</div><span className='text-[10px] font-black uppercase tracking-widest text-purple-700'>Question {q.questionNumber || i + 1}</span></div>
+                    <div className='flex items-center gap-2'><span className='text-sm font-black text-gray-900'>{typeof q.marks === 'number' ? q.marks.toFixed(1) : '0.0'}/10</span><span className='text-[10px] text-purple-600'>({q.score || 0}%)</span></div>
                   </div>
                   <div className='p-5 space-y-4'>
                     <div><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2'>AI Question</p><p className='text-sm font-bold text-gray-900 p-3 rounded-xl bg-gray-50 border border-black/5'>{q.question}</p></div>
@@ -335,7 +375,8 @@ const CandidateTranscriptPage = () => {
             ) : (
               <div className="space-y-4">
                 {(() => {
-                  const totalPenalty = interview.proctoringViolations.reduce((sum, v) => sum + (v.rating || 0), 0);
+                  const violations = Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : [];
+                  const totalPenalty = violations.reduce((sum, v) => sum + (v.rating || 0), 0);
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 flex items-center gap-3 text-amber-800">
@@ -374,7 +415,7 @@ const CandidateTranscriptPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-xs">
-                      {interview.proctoringViolations.map((v) => {
+                      {(Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : []).map((v) => {
                         let severityClass = "bg-gray-100 text-gray-700";
                         if (v.severity === 'low') severityClass = "bg-emerald-50 text-emerald-700 border border-emerald-100";
                         else if (v.severity === 'medium') severityClass = "bg-amber-50 text-amber-700 border border-amber-100";
@@ -574,4 +615,10 @@ const CandidateTranscriptPage = () => {
   );
 };
 
-export default CandidateTranscriptPage;
+const CandidateTranscriptPageWithBoundary = () => (
+  <TranscriptErrorBoundary>
+    <CandidateTranscriptPage />
+  </TranscriptErrorBoundary>
+);
+
+export default CandidateTranscriptPageWithBoundary;
