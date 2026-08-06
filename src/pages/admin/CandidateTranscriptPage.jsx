@@ -339,7 +339,7 @@ const CandidateTranscriptPage = () => {
         )}
 
         {interview?.questions?.length > 0 && (
-          <Sec title='AI Interview Transcript' icon={<MessageSquare size={16} />} grad='from-purple-500 to-indigo-500'>
+          <Sec title='Interview Transcript' icon={<MessageSquare size={16} />} grad='from-purple-500 to-indigo-500'>
             <div className='flex items-center gap-8 mb-6 p-5 rounded-2xl bg-purple-50 border border-purple-200'>
               <div className='text-center'><p className='text-4xl font-black text-purple-600'>{dynInterview > 0 || interview.questions.length > 0 ? `${dynInterview}/70` : 'N/A'}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Score</p></div>
               <div className='text-center'><p className='text-4xl font-black text-gray-900'>{interview.totalQuestions}</p><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Questions</p></div>
@@ -352,7 +352,7 @@ const CandidateTranscriptPage = () => {
                     <div className='flex items-center gap-2'><span className='text-sm font-black text-gray-900'>{typeof q.marks === 'number' ? q.marks.toFixed(1) : '0.0'}/10</span><span className='text-[10px] text-purple-600'>({q.score || 0}%)</span></div>
                   </div>
                   <div className='p-5 space-y-4'>
-                    <div><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2'>AI Question</p><p className='text-sm font-bold text-gray-900 p-3 rounded-xl bg-gray-50 border border-black/5'>{q.question}</p></div>
+                    <div><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2'>Question</p><p className='text-sm font-bold text-gray-900 p-3 rounded-xl bg-gray-50 border border-black/5'>{q.question}</p></div>
                     {q.isAttempted ? <div><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2'>Candidate Answer</p><p className='text-sm text-gray-800 p-3 rounded-xl bg-indigo-50 border border-indigo-100 leading-relaxed'>{q.answer}</p></div> : <p className='text-xs text-red-500 font-bold italic'>Not attempted</p>}
                     {q.feedback && <div><p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2'>Reason for Assessment</p><p className='text-xs text-gray-700 p-3 rounded-xl bg-emerald-50 border border-emerald-100 leading-relaxed'>{q.feedback}</p></div>}
                   </div>
