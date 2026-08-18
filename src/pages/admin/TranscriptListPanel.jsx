@@ -27,7 +27,7 @@ const TranscriptListPanel = () => {
     const [loadingJobs, setLoadingJobs] = useState(true);
     const [loadingCandidates, setLoadingCandidates] = useState(false);
     const [search, setSearch] = useState('');
-    const [sortBy, setSortBy] = useState('none');
+    const [sortBy, setSortBy] = useState('finalScore');
     const [sortOrder, setSortOrder] = useState('desc');
 
     useEffect(() => {
@@ -79,7 +79,13 @@ const TranscriptListPanel = () => {
     );
 
     const sorted = [...filtered].sort((a, b) => {
-        if (sortBy === 'none') return 0;
+        if (sortBy === 'none') {
+            let valA = a.finalScore;
+            let valB = b.finalScore;
+            if (valA === null || valA === undefined) valA = -1;
+            if (valB === null || valB === undefined) valB = -1;
+            return valB - valA;
+        }
         let valA = a[sortBy];
         let valB = b[sortBy];
         if (valA === null || valA === undefined) valA = -1;
