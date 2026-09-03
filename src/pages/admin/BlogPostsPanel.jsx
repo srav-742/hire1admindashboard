@@ -413,7 +413,7 @@ export default function BlogPostsPanel() {
         try {
             const res = await adminGetBlogPosts({
                 page,
-                limit: 20
+                limit: 1000
             });
             if (res && res.posts) {
                 setPosts(res.posts);

@@ -8,7 +8,7 @@ export const adminGetBlogPosts = async (params = {}) => {
     const headers = await getAuthHeaders();
     const response = await axios.get(`${API_URL}/v1/admin/blogs`, {
         headers,
-        params
+        params: { limit: 1000, ...params }
     });
     return response.data;
 };
