@@ -88,12 +88,21 @@ const TranscriptListPanel = () => {
         }
         let valA = a[sortBy];
         let valB = b[sortBy];
+        if (sortBy === 'integrityScore') {
+            if (valA === null || valA === undefined) valA = Math.max(0, 100 - Math.round((a.proctoringScore || 0) * 2.5));
+            if (valB === null || valB === undefined) valB = Math.max(0, 100 - Math.round((b.proctoringScore || 0) * 2.5));
+        }
         if (valA === null || valA === undefined) valA = -1;
         if (valB === null || valB === undefined) valB = -1;
         return sortOrder === 'desc' ? valB - valA : valA - valB;
     });
 
     const selectedJob = jobs.find(j => j._id === selectedJobId);
+    const hasAnyCoding = Boolean(
+        selectedJob?.codingAssessment?.enabled || 
+        (selectedJob?.title && /python/i.test(selectedJob.title)) || 
+        candidates.some(c => c.codingScore !== null && c.codingScore !== undefined)
+    );
 
     return (
         <div className="space-y-6">
@@ -138,9 +147,11 @@ const TranscriptListPanel = () => {
                         <option value="none">Sort: Default</option>
                         <option value="resumeScore">Sort: Resume Match</option>
                         <option value="assessmentScore">Sort: Assessment</option>
+                        <option value="codingScore">Sort: Coding Score</option>
                         <option value="interviewScore">Sort: Interview</option>
                         <option value="finalScore">Sort: Final Score</option>
-                        <option value="proctoringScore">Sort: Integrity Trust Score</option>
+                        <option value="proctoringScore">Sort: Proctoring Score</option>
+                        <option value="integrityScore">Sort: Integrity Score</option>
                     </select>
                     {sortBy !== 'none' && (
                         <button
@@ -204,6 +215,25 @@ const TranscriptListPanel = () => {
                                 </span>
                                 {c.hasInterview && <span className="text-[9px] text-purple-600 font-bold uppercase tracking-widest bg-purple-50 px-2 py-0.5 rounded-full">Interview ✓</span>}
                                 {c.hasAssessment && <span className="text-[9px] text-orange-600 font-bold uppercase tracking-widest bg-orange-50 px-2 py-0.5 rounded-full">Assessment ✓</span>}
+                                {c.codingScore !== null && c.codingScore !== undefined && (
+                                    <span className="text-[9px] text-cyan-700 font-black uppercase tracking-widest bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full">
+                                        Coding: {Math.round(c.codingScore)}/100
+                                    </span>
+                                )}
+                                {c.proctoringScore > 0 ? (
+                                    <span className="text-[9px] text-red-700 font-black uppercase tracking-widest bg-red-100 border border-red-200 px-2 py-0.5 rounded-full">
+                                        Proc Score: {c.proctoringScore}
+                                    </span>
+                                ) : (
+                                    <span className="text-[9px] text-emerald-700 font-black uppercase tracking-widest bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                        Proc Score: 0
+                                    </span>
+                                )}
+                                {Array.isArray(c.proctoringFlags) && c.proctoringFlags.length > 0 && (
+                                    <span className="text-[9px] text-gray-600 font-bold bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
+                                        {c.proctoringFlags.length} flags
+                                    </span>
+                                )}
                             </div>
                         </div>
 
@@ -214,14 +244,29 @@ const TranscriptListPanel = () => {
                             <div className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-gray-50 border border-black/10 font-black text-gray-800 text-sm">
                                 {c.finalScore !== null && c.finalScore !== undefined ? `${Math.round(c.finalScore)}/100` : <span className="text-[10px] font-bold text-gray-500">N/A</span>}
                             </div>
+                            {hasAnyCoding && (
+                                <ScorePill value={c.codingScore} color="bg-cyan-500/5 border-cyan-500/20 text-cyan-600" max={100} />
+                            )}
                             <ScorePill value={c.proctoringScore ?? 0} color={c.proctoringScore > 0 ? "bg-red-500/10 border-red-500/30 text-red-600" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-600"} showMax={false} />
+                            <ScorePill 
+                                value={c.integrityScore !== undefined && c.integrityScore !== null ? c.integrityScore : Math.max(0, 100 - Math.round((c.proctoringScore || 0) * 2.5))} 
+                                color={
+                                    (c.integrityScore ?? 100) >= 70 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" :
+                                    (c.integrityScore ?? 100) >= 60 ? "bg-amber-500/10 border-amber-500/30 text-amber-600" :
+                                    (c.integrityScore ?? 100) >= 50 ? "bg-orange-500/10 border-orange-500/30 text-orange-600" :
+                                    "bg-red-500/10 border-red-500/30 text-red-600"
+                                } 
+                                max={100} 
+                            />
                         </div>
                         <div className="hidden lg:flex flex-col gap-1 text-[9px] text-gray-500 font-black uppercase tracking-widest w-10 text-center">
                             <span className="text-blue-600">RES</span>
                             <span className="text-orange-600">ASS</span>
                             <span className="text-purple-600">INT</span>
                             <span className="text-gray-900">FIN</span>
+                            {hasAnyCoding && <span className="text-cyan-600">COD</span>}
                             <span className="text-red-600">PROC</span>
+                            <span className="text-emerald-600">INTG</span>
                         </div>
 
                         {/* View Button */}

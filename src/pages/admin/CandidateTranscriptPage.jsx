@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL, getAuthHeaders } from '../../firebase';
 import { motion } from 'framer-motion';
-import { ArrowLeft, User, Mail, Phone, MapPin, CheckCircle, XCircle, Award, FileText, Code, MessageSquare, BarChart2, Printer, ExternalLink, ShieldAlert, ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, MapPin, CheckCircle, XCircle, Award, FileText, Code, MessageSquare, BarChart2, Printer, ExternalLink, ShieldAlert, ShieldCheck, Clock, AlertTriangle, Terminal } from 'lucide-react';
 
 // ── Error Boundary ──────────────────────────────────────────────────────
 class TranscriptErrorBoundary extends Component {
@@ -37,15 +37,15 @@ class TranscriptErrorBoundary extends Component {
 const ScoreRing = ({ value, color = '#3b82f6', size = 80, max = 100 }) => {
   const r = 28;
   const circ = 2 * Math.PI * r;
-  const pct = (value || 0) / max;
+  const pct = max ? Math.min(1, (value || 0) / max) : 1;
   return (
     <svg width={size} height={size} viewBox='0 0 80 80'>
       <circle cx='40' cy='40' r={r} fill='none' stroke='rgba(0,0,0,0.1)' strokeWidth='8' />
       <circle cx='40' cy='40' r={r} fill='none' stroke={color} strokeWidth='8'
-        strokeDasharray={circ} strokeDashoffset={circ * (1 - pct)}
+        strokeDasharray={circ} strokeDashoffset={max ? circ * (1 - pct) : 0}
         strokeLinecap='round' transform='rotate(-90 40 40)' />
       <text x='40' y='44' textAnchor='middle' fill='#111827' fontSize='13' fontWeight='900'>
-        {value != null ? `${Math.round(value)}/${max}` : '-'}
+        {value != null ? (max ? `${Math.round(value)}/${max}` : `${Math.round(value)}`) : '-'}
       </text>
     </svg>
   );
@@ -134,13 +134,28 @@ const CandidateTranscriptPage = () => {
     </div>
   );
 
-  const { candidate, job, application, resume, assessment, interview, scores, generatedAt } = data;
+  const { candidate, job, application, resume, assessment, interview, coding, scores, generatedAt } = data;
+  const dynCoding = scores?.codingScore ?? coding?.score ?? application?.codingScore ?? null;
+  const hasCoding = dynCoding !== null && dynCoding !== undefined;
   // Use the single source of truth from the backend's unified score calculator
   const dynResume = scores?.resumeMatch || 0;
   const dynAssessment = scores?.assessmentScore || 0;
   const dynInterview = scores?.interviewScore || 0;
   const fs = scores?.finalScore || 0;
   
+  const violationsList = Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : [];
+  const calculatedSum = violationsList.reduce((sum, v) => sum + (v.rating || 0), 0);
+  const proctoringScore = calculatedSum > 0 ? calculatedSum : (scores?.proctoringScore ?? data.proctoringScore ?? 0);
+  const rawIntegrity = scores?.integrityScore ?? data.integrityScore ?? (data.application?.integrityScore ?? null);
+  const integrityScore = rawIntegrity !== null && rawIntegrity !== undefined 
+      ? rawIntegrity 
+      : Math.max(0, 100 - Math.round(proctoringScore * 2.5));
+  const riskLevel = scores?.riskLevel ?? data.riskLevel ?? (
+      integrityScore >= 70 ? 'LOW RISK' :
+      integrityScore >= 60 ? 'RECOMMENDED' :
+      integrityScore >= 50 ? 'REVIEW REQUIRED' : 'HIGH RISK'
+  );
+
   const verdict = fs >= 80 ? { l: 'Strongly Recommended', c: 'text-emerald-600', b: 'bg-emerald-50 border-emerald-200' }
     : fs >= 60 ? { l: 'Recommended', c: 'text-blue-600', b: 'bg-blue-50 border-blue-200' }
     : fs >= 40 ? { l: 'Needs Review', c: 'text-amber-600', b: 'bg-amber-50 border-amber-200' }
@@ -211,7 +226,18 @@ const CandidateTranscriptPage = () => {
               <div className='text-[10px] font-black uppercase tracking-[0.3em] text-blue-600 mb-2'>Hire1Percent - Candidate Evaluation Report</div>
               <h1 className='text-4xl font-black text-gray-900 mb-1'>{candidate.name}</h1>
               <p className='text-gray-600 font-medium text-lg'>{job.title}{job.company ? ' @ ' + job.company : ''}</p>
-              <p className='text-gray-500 text-xs mt-2'>Generated: {new Date(generatedAt).toLocaleString()}</p>
+              <div className='flex items-center gap-2 mt-2 flex-wrap'>
+                <span className='text-gray-500 text-xs'>Generated: {new Date(generatedAt).toLocaleString()}</span>
+                {proctoringScore > 0 ? (
+                  <span className='px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-wider border border-red-200'>
+                    Proctoring Score: {proctoringScore}
+                  </span>
+                ) : (
+                  <span className='px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider border border-emerald-200'>
+                    Proctoring Score: 0 (Clean)
+                  </span>
+                )}
+              </div>
             </div>
             <div className={'px-8 py-5 rounded-2xl border text-center min-w-[140px] ' + verdict.b}>
               <p className={'text-4xl font-black ' + verdict.c}>{fs != null ? Math.round(fs) : '--'}</p>
@@ -338,6 +364,99 @@ const CandidateTranscriptPage = () => {
           </Sec>
         )}
 
+        {coding && (
+          <Sec title='Coding Assessment Transcript' icon={<Terminal size={16} />} grad='from-cyan-500 to-blue-500'>
+            <div className='flex items-center gap-8 mb-6 p-5 rounded-2xl bg-cyan-50 border border-cyan-200'>
+              <div className='text-center'>
+                <p className='text-4xl font-black text-cyan-600'>
+                  {coding.score !== null && coding.score !== undefined ? `${Math.round(coding.score)}/100` : 'N/A'}
+                </p>
+                <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Coding Score</p>
+              </div>
+              <div className='text-center'>
+                <p className='text-4xl font-black text-gray-900'>
+                  {coding.answers?.length || 0}
+                </p>
+                <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Problems</p>
+              </div>
+              {coding.passingScore && (
+                <div className='text-center'>
+                  <p className='text-4xl font-black text-gray-700'>{coding.passingScore}/100</p>
+                  <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-1'>Passing Cutoff</p>
+                </div>
+              )}
+            </div>
+
+            <div className='space-y-5'>
+              {(Array.isArray(coding.answers) ? coding.answers : []).map((ans, i) => (
+                <div key={i} className='rounded-2xl border border-cyan-200 bg-white shadow-sm overflow-hidden'>
+                  <div className='flex items-center justify-between px-5 py-3 bg-cyan-50/50 border-b border-cyan-100 flex-wrap gap-2'>
+                    <div className='flex items-center gap-3'>
+                      <div className='w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center font-black text-sm'>
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className='text-sm font-black text-gray-900'>{ans.questionTitle || `Problem ${i + 1}`}</p>
+                        <span className='text-[9px] font-black uppercase tracking-widest text-cyan-700 bg-cyan-100/60 px-2 py-0.5 rounded-full'>
+                          {ans.difficulty || 'MEDIUM'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className='flex items-center gap-3'>
+                      {ans.testCasesPassed !== null && (
+                        <span className='text-xs font-bold text-gray-600 bg-white border border-gray-200 px-2.5 py-1 rounded-lg'>
+                          Test Cases: <strong className='text-gray-900'>{ans.testCasesPassed}/{ans.totalTestCases || 10}</strong>
+                        </span>
+                      )}
+                      <span className='text-sm font-black text-cyan-700 bg-white border border-cyan-200 px-2.5 py-1 rounded-lg'>
+                        {ans.obtainedMarks !== undefined ? `${Math.round(ans.obtainedMarks)}` : `${Math.round(ans.score || 0)}`} / {Math.round(ans.maximumMarks || 100)} pts
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className='p-5 space-y-4'>
+                    {ans.questionDescription && (
+                      <div>
+                        <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1'>Description</p>
+                        <p className='text-xs text-gray-700 p-3 rounded-xl bg-gray-50 border border-gray-100 leading-relaxed whitespace-pre-line'>
+                          {ans.questionDescription}
+                        </p>
+                      </div>
+                    )}
+
+                    {ans.code && (
+                      <div>
+                        <div className='flex items-center justify-between mb-1'>
+                          <p className='text-[10px] font-black uppercase tracking-widest text-gray-500'>Submitted Solution ({ans.language || 'Python'})</p>
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                            ans.correctnessVerdict === 'Correct' ? 'bg-emerald-100 text-emerald-800' :
+                            ans.correctnessVerdict === 'Partially Correct' ? 'bg-amber-100 text-amber-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {ans.correctnessVerdict || 'Evaluated'}
+                          </span>
+                        </div>
+                        <pre className='p-4 rounded-xl bg-gray-900 text-gray-100 text-xs font-mono overflow-x-auto leading-relaxed'>
+                          <code>{ans.code}</code>
+                        </pre>
+                      </div>
+                    )}
+
+                    {ans.feedback && (
+                      <div>
+                        <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1'>Code Evaluation Feedback</p>
+                        <p className='text-xs text-gray-700 p-3 rounded-xl bg-blue-50/60 border border-blue-100 leading-relaxed'>
+                          {ans.feedback}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Sec>
+        )}
+
         {interview?.questions?.length > 0 && (
           <Sec title='Interview Transcript' icon={<MessageSquare size={16} />} grad='from-purple-500 to-indigo-500'>
             <div className='flex items-center gap-8 mb-6 p-5 rounded-2xl bg-purple-50 border border-purple-200'>
@@ -362,104 +481,159 @@ const CandidateTranscriptPage = () => {
           </Sec>
         )}
 
-        {interview && (
+        {(interview || proctoringScore > 0 || (data.proctoringFlags && data.proctoringFlags.length > 0)) && (
           <Sec title="Security & Proctoring Audit" icon={<ShieldAlert size={16} />} grad="from-red-500 to-orange-500">
-            {(!interview.proctoringViolations || interview.proctoringViolations.length === 0) ? (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 flex items-center gap-3 text-emerald-800">
-                <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
-                <div>
-                  <h4 className="font-bold text-sm">Clean Session</h4>
-                  <p className="text-xs text-emerald-700/90 mt-0.5">No proctoring violations or tab-switching events were detected during this interview session.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {(() => {
-                  const violations = Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : [];
-                  const totalPenalty = violations.reduce((sum, v) => sum + (v.rating || 0), 0);
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 flex items-center gap-3 text-amber-800">
-                        <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0" />
-                        <div>
-                          <h4 className="font-bold text-sm">Integrity Alerts Logged ({interview.proctoringViolations.length})</h4>
-                          <p className="text-xs text-amber-700/90 mt-0.5">
-                            The system detected activities that triggered proctoring alerts. Please review the details below.
-                          </p>
-                        </div>
+            {(() => {
+              const violations = Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : [];
+              const flags = data.proctoringFlags || interview?.proctoringFlags || Array.from(new Set(violations.map(v => v.type)));
+              const hasAlerts = proctoringScore > 0 || violations.length > 0 || flags.length > 0;
+
+              if (!hasAlerts) {
+                return (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 flex items-center gap-4 text-emerald-800">
+                    <div className="h-12 w-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                      100%
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">Clean Session — 🟢 High Trust (Verified Honest)</h4>
+                      <p className="text-xs text-emerald-700/90 mt-0.5">No proctoring violations or suspicious events were detected during candidate evaluation.</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`rounded-2xl border p-5 flex items-center gap-4 ${
+                      integrityScore >= 70 ? 'border-emerald-200 bg-emerald-50/50 text-emerald-800' :
+                      integrityScore >= 60 ? 'border-amber-200 bg-amber-50/50 text-amber-800' :
+                      integrityScore >= 50 ? 'border-orange-200 bg-orange-50/50 text-orange-800' :
+                      'border-red-200 bg-red-50/50 text-red-800'
+                    }`}>
+                      <div className={`h-12 w-12 rounded-xl text-white flex items-center justify-center font-black text-lg shadow-md shrink-0 ${
+                        integrityScore >= 70 ? 'bg-emerald-500' :
+                        integrityScore >= 60 ? 'bg-amber-500' :
+                        integrityScore >= 50 ? 'bg-orange-500' :
+                        'bg-red-500'
+                      }`}>
+                        {integrityScore}%
                       </div>
-                      <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 flex items-center gap-4 text-red-800">
-                        <div className="h-12 w-12 rounded-xl bg-red-500 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
-                          {totalPenalty}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm">Total Integrity Penalty Rating</h4>
-                          <p className="text-xs text-red-700/95 mt-0.5">
-                            Aggregated suspicion rating across all flagged behaviors during the session.
-                          </p>
-                        </div>
+                      <div>
+                        <h4 className="font-bold text-sm">Integrity Trust Score</h4>
+                        <p className="text-[11px] font-black uppercase tracking-wider mt-0.5">
+                          {riskLevel === 'HIGH RISK' ? '🔴 High Risk (Misconduct)' :
+                           riskLevel === 'REVIEW REQUIRED' ? '🟠 Review Recommended' :
+                           riskLevel === 'RECOMMENDED' ? '🟡 Recommended (Minor Alerts)' :
+                           '🟢 High Trust (Verified)'}
+                        </p>
                       </div>
                     </div>
-                  );
-                })()}
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 flex items-center gap-3 text-amber-800">
+                      <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0" />
+                      <div>
+                        <h4 className="font-bold text-sm">Proctoring Flags ({violations.length})</h4>
+                        <p className="text-xs text-amber-700/90 mt-0.5">
+                          Total events detected during session.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 flex items-center gap-4 text-red-800">
+                      <div className="h-12 w-12 rounded-xl bg-red-500 text-white flex items-center justify-center font-black text-xl shadow-md shrink-0">
+                        {proctoringScore}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm">Total Flag Score</h4>
+                        <p className="text-xs text-red-700/95 mt-0.5">
+                          Sum of penalty ratings measured.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
-                        <th className="py-3 px-4">Event Type</th>
-                        <th className="py-3 px-4">Details</th>
-                        <th className="py-3 px-4 text-center">Rating</th>
-                        <th className="py-3 px-4 text-center">Severity</th>
-                        <th className="py-3 px-4 text-right">Time Detected</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-xs">
-                      {(Array.isArray(interview?.proctoringViolations) ? interview.proctoringViolations : []).map((v) => {
-                        let severityClass = "bg-gray-100 text-gray-700";
-                        if (v.severity === 'low') severityClass = "bg-emerald-50 text-emerald-700 border border-emerald-100";
-                        else if (v.severity === 'medium') severityClass = "bg-amber-50 text-amber-700 border border-amber-100";
-                        else if (v.severity === 'high') severityClass = "bg-red-50 text-red-700 border border-red-100";
-                        else if (v.severity === 'critical') severityClass = "bg-red-600 text-white font-bold";
+                  {flags.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-white border border-gray-200 flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-gray-500">Flagged Categories:</span>
+                      {flags.map((f, idx) => (
+                        <span key={idx} className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 border border-red-200 text-xs font-bold uppercase tracking-tight">
+                          {String(f).replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                        const typeLabel = String(v.type).replace(/_/g, ' ');
-
-                        return (
-                          <tr key={v.id || v.timestamp} className="hover:bg-gray-50/50">
-                            <td className="py-3 px-4 font-bold text-gray-800 uppercase tracking-tight">
-                              {typeLabel}
-                            </td>
-                            <td className="py-3 px-4 text-gray-600 leading-normal">
-                              {v.detail}
-                            </td>
-                            <td className="py-3 px-4 text-center font-bold text-red-600 bg-red-50/10">
-                              +{v.rating || 0}
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${severityClass}`}>
-                                {v.severity || 'medium'}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right text-gray-400 font-medium whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <Clock size={12} />
-                                {new Date(v.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                              </div>
-                            </td>
+                  {violations.length > 0 ? (
+                    <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
+                            <th className="py-3 px-4">Event Type</th>
+                            <th className="py-3 px-4">Details</th>
+                            <th className="py-3 px-4 text-center">Rating</th>
+                            <th className="py-3 px-4 text-center">Severity</th>
+                            <th className="py-3 px-4 text-right">Time Detected</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-xs">
+                          {violations.map((v) => {
+                            let severityClass = "bg-gray-100 text-gray-700";
+                            if (v.severity === 'low') severityClass = "bg-emerald-50 text-emerald-700 border border-emerald-100";
+                            else if (v.severity === 'medium') severityClass = "bg-amber-50 text-amber-700 border border-amber-100";
+                            else if (v.severity === 'high') severityClass = "bg-red-50 text-red-700 border border-red-100";
+                            else if (v.severity === 'critical') severityClass = "bg-red-600 text-white font-bold";
+
+                            const typeLabel = String(v.type).replace(/_/g, ' ');
+
+                            return (
+                              <tr key={v.id || v.timestamp} className="hover:bg-gray-50/50">
+                                <td className="py-3 px-4 font-bold text-gray-800 uppercase tracking-tight">
+                                  {typeLabel}
+                                </td>
+                                <td className="py-3 px-4 text-gray-600 leading-normal">
+                                  {v.detail}
+                                </td>
+                                <td className="py-3 px-4 text-center font-bold text-red-600 bg-red-50/10">
+                                  +{v.rating || 0}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${severityClass}`}>
+                                    {v.severity || 'medium'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-right text-gray-400 font-medium whitespace-nowrap">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Clock size={12} />
+                                    {new Date(v.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600">
+                      Summary penalty recorded from proctoring verification pipeline.
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </Sec>
         )}
 
         <Sec title='Overall Evaluation Summary' icon={<Award size={16} />} grad='from-yellow-500 to-orange-500'>
-          <div className='grid grid-cols-2 md:grid-cols-3 gap-4 mb-6'>
-            {[{ l: 'Resume Match', v: dynResume, c: '#3b82f6', m: 10 }, { l: 'Assessment', v: dynAssessment, c: '#f97316', m: 20 }, { l: 'Interview', v: dynInterview, c: '#8b5cf6', m: 70 }, { l: 'Final Score', v: fs, c: '#f59e0b', m: 100 }].map((s, i) => (
+          <div className={`grid grid-cols-2 sm:grid-cols-3 ${hasCoding ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-4 mb-6`}>
+            {[
+              { l: 'Resume Match', v: dynResume, c: '#3b82f6', m: 10 },
+              { l: 'Assessment', v: dynAssessment, c: '#f97316', m: 20 },
+              { l: 'Interview', v: dynInterview, c: '#8b5cf6', m: 70 },
+              { l: 'Final Score', v: fs, c: '#f59e0b', m: 100 },
+              ...(hasCoding ? [{ l: 'Coding Score', v: dynCoding, c: '#06b6d4', m: 100 }] : []),
+              { l: 'Proctoring Score', v: proctoringScore, c: proctoringScore > 0 ? '#ef4444' : '#10b981', m: null },
+              { l: 'Integrity Score', v: integrityScore, c: integrityScore >= 70 ? '#10b981' : integrityScore >= 60 ? '#f59e0b' : integrityScore >= 50 ? '#f97316' : '#ef4444', m: 100 }
+            ].map((s, i) => (
               <div key={i} className='p-4 rounded-2xl bg-white shadow-sm border border-black/5 flex flex-col items-center'>
                 <ScoreRing value={s.v} color={s.c} size={80} max={s.m} />
                 <p className='text-[10px] font-black uppercase tracking-widest text-gray-500 mt-2'>{s.l}</p>

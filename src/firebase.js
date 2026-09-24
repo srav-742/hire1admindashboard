@@ -22,7 +22,9 @@ export const loginWithEmail = async (email, password) => {
     return await signInWithEmailAndPassword(auth, email, password);
 };
 
-export const API_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000/api' : 'https://updatedtalentecosystem-kl0c.onrender.com/api');
+export const API_URL = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? (import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:5000/api')
+    : (import.meta.env.VITE_API_URL || 'https://updatedtalentecosystem-kl0c.onrender.com/api');
 
 
 export const getAuthHeaders = async () => {
@@ -36,7 +38,7 @@ export const getAuthHeaders = async () => {
     if (storedUserStr) {
         try {
             const storedUser = JSON.parse(storedUserStr);
-            if (storedUser?.role === 'admin') {
+            if (storedUser?.role === 'admin' || storedUser?.role === 'recruiter') {
                 const userId = storedUser?.uid || storedUser?._id || 'SQKunisKWhb49NUPKuk9R38iwQN2';
                 return {
                     'x-user-id': userId,
