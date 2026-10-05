@@ -62,6 +62,15 @@ const AnalyticsPanel = () => {
                                     Premium
                                 </span>
                             )}
+                            {user.accountType === 'pilot' && (
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    user.pilotExpiresAt && new Date(user.pilotExpiresAt) < new Date()
+                                        ? 'bg-red-500/15 text-red-600 border border-red-500/20'
+                                        : 'bg-amber-500/15 text-amber-700 border border-amber-500/20'
+                                }`}>
+                                    Pilot {user.pilotExpiresAt && new Date(user.pilotExpiresAt) < new Date() ? '(Expired)' : '(Active)'}
+                                </span>
+                            )}
                             <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">
                                 {user.createdAt && !isNaN(new Date(user.createdAt).getTime())
                                     ? `Joined ${new Date(user.createdAt).toLocaleDateString()}`
@@ -123,6 +132,23 @@ const AnalyticsPanel = () => {
                                                 <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">Phone</p>
                                                 <p className="text-gray-800 text-sm">{user.phone || "N/A"}</p>
                                             </div>
+                                            {user.accountType === 'pilot' && (
+                                                <div className="col-span-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                                                    <p className="text-[10px] text-amber-700 font-black uppercase tracking-widest mb-1">Pilot Access Details</p>
+                                                    <div className="flex flex-wrap gap-4 text-xs">
+                                                        <div>
+                                                            <span className="text-gray-500">Expires: </span>
+                                                            <span className="font-bold text-gray-800">{user.pilotExpiresAt ? new Date(user.pilotExpiresAt).toLocaleString() : 'N/A'}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-gray-500">Status: </span>
+                                                            <span className={`font-bold ${user.pilotExpiresAt && new Date(user.pilotExpiresAt) < new Date() ? 'text-red-600' : 'text-emerald-600'}`}>
+                                                                {user.pilotExpiresAt && new Date(user.pilotExpiresAt) < new Date() ? 'EXPIRED' : 'ACTIVE'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </>
                                     ) : (
                                         <>

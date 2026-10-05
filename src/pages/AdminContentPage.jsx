@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, RefreshCw, Layers, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Loader2, LogOut, FileText, BarChart } from "lucide-react";
+import { Zap, RefreshCw, Layers, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Loader2, LogOut, FileText, BarChart, UserCheck } from "lucide-react";
 import { getAllContent, generateContent } from "../services/contentService";
 import ContentList from "../components/ContentList";
 import ContentDetail from "../components/ContentDetail";
@@ -10,6 +10,7 @@ import { API_URL, getAuthHeaders } from "../firebase";
 import TranscriptListPanel from "./admin/TranscriptListPanel";
 import AnalyticsPanel from "./admin/AnalyticsPanel";
 import BlogPostsPanel from "./admin/BlogPostsPanel";
+import PilotAccountsPanel from "./admin/PilotAccountsPanel";
 
 // ─── Job Approval Panel ──────────────────────────────────────────────────────
 const JobRequestsPanel = () => {
@@ -467,7 +468,9 @@ const AdminContentPage = () => {
                                     ? <>Analytics <span className="text-gray-500">Dashboard</span></>
                                     : activeTab === "blogs"
                                         ? <>Blog <span className="text-gray-500">Management</span></>
-                                        : <>Candidate <span className="text-gray-500">Transcripts</span></>
+                                        : activeTab === "pilot-accounts"
+                                            ? <>Pilot <span className="text-gray-500">Recruiter Accounts</span></>
+                                            : <>Candidate <span className="text-gray-500">Transcripts</span></>
                             }
                         </h1>
                         <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500">
@@ -477,7 +480,9 @@ const AdminContentPage = () => {
                                     ? "Platform statistics, recruiters, and candidates overview."
                                     : activeTab === "blogs"
                                         ? "Create, publish, edit, and schedule dynamic blog posts."
-                                        : "Review candidate interview transcripts."
+                                        : activeTab === "pilot-accounts"
+                                            ? "Provision temporary full-access pilot recruiter accounts with server-enforced duration."
+                                            : "Review candidate interview transcripts."
                             }
                         </p>
                     </div>
@@ -503,6 +508,15 @@ const AdminContentPage = () => {
                     >
                         <Briefcase size={14} />
                         Job Posting Requests
+                    </button>
+                    <button
+                        onClick={() => handleTabChange("pilot-accounts")}
+                        className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "pilot-accounts"
+                            ? "bg-black text-white shadow-md"
+                            : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
+                    >
+                        <UserCheck size={14} />
+                        Pilot Accounts
                     </button>
                     <button
                         onClick={() => handleTabChange("transcripts")}
@@ -537,6 +551,12 @@ const AdminContentPage = () => {
                 <div className={activeTab === "jobs" ? "block" : "hidden"}>
                     <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
                         <JobRequestsPanel />
+                    </div>
+                </div>
+
+                <div className={activeTab === "pilot-accounts" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-6xl rounded-[2.5rem] border border-black/10 bg-white p-6 md:p-8 shadow-sm">
+                        <PilotAccountsPanel />
                     </div>
                 </div>
 
