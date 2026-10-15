@@ -9,6 +9,21 @@ const ProtectedRoute = ({ children, role }) => {
 
     useEffect(() => {
         const checkAuth = () => {
+            const searchParams = new URLSearchParams(window.location.search);
+            const userParam = searchParams.get('user');
+            if (userParam) {
+                try {
+                    const parsed = JSON.parse(decodeURIComponent(userParam));
+                    if (parsed?.uid || parsed?._id) {
+                        localStorage.setItem('user', JSON.stringify(parsed));
+                        setUser(parsed);
+                        setIsLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse user from URL", e);
+                }
+            }
             const storedUser = localStorage.getItem('user');
             if (storedUser) {
                 try {
@@ -35,7 +50,10 @@ const ProtectedRoute = ({ children, role }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (role && user.role !== role) {
+    const ADMIN_EMAILS = ['sravyaadmin@gmail.com', 'sravyadhadi@gmail.com', 'admin@hire1percent.com', 'hemangi@web3today.io'];
+    const isAdminByEmail = user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+
+    if (role && user.role !== role && !isAdminByEmail) {
         console.warn(`[ProtectedRoute] Access restricted: user role is '${user.role}' but '${role}' is required.`);
         return <Navigate to="/login" replace />;
     }

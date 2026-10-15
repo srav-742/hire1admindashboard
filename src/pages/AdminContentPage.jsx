@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, RefreshCw, Layers, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Loader2, LogOut, FileText, BarChart, UserCheck } from "lucide-react";
+import { Zap, RefreshCw, Layers, Briefcase, CheckCircle, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Loader2, LogOut, FileText, BarChart, UserCheck, Database } from "lucide-react";
 import { getAllContent, generateContent } from "../services/contentService";
 import ContentList from "../components/ContentList";
 import ContentDetail from "../components/ContentDetail";
@@ -11,6 +11,7 @@ import TranscriptListPanel from "./admin/TranscriptListPanel";
 import AnalyticsPanel from "./admin/AnalyticsPanel";
 import BlogPostsPanel from "./admin/BlogPostsPanel";
 import PilotAccountsPanel from "./admin/PilotAccountsPanel";
+import QuestionBankPanel from "./admin/QuestionBankPanel";
 
 // ─── Job Approval Panel ──────────────────────────────────────────────────────
 const JobRequestsPanel = () => {
@@ -462,8 +463,10 @@ const AdminContentPage = () => {
                             <span className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gray-400">Admin Dashboard</span>
                         </div>
                         <h1 className="text-4xl font-semibold tracking-tight text-gray-950">
-                            {activeTab === "jobs"
-                                ? <>Job <span className="text-gray-500">Approvals</span></>
+                            {activeTab === "question-bank"
+                                ? <>Question <span className="text-gray-500">Bank</span></>
+                                : activeTab === "jobs"
+                                    ? <>Job <span className="text-gray-500">Approvals</span></>
                                 : activeTab === "analytics"
                                     ? <>Analytics <span className="text-gray-500">Dashboard</span></>
                                     : activeTab === "blogs"
@@ -474,8 +477,10 @@ const AdminContentPage = () => {
                             }
                         </h1>
                         <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-500">
-                            {activeTab === "jobs"
-                                ? "Review, approve, or reject recruiter job posting requests."
+                            {activeTab === "question-bank"
+                                ? "Manage vetted coding problems, sandbox test execution, question approvals, and recruiter access control."
+                                : activeTab === "jobs"
+                                    ? "Review, approve, or reject recruiter job posting requests."
                                 : activeTab === "analytics"
                                     ? "Platform statistics, recruiters, and candidates overview."
                                     : activeTab === "blogs"
@@ -500,6 +505,15 @@ const AdminContentPage = () => {
 
                 {/* ── Tab Navigation ──────────────────────────────────────── */}
                 <div className="mb-8 flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-black/10 bg-white p-1.5 shadow-sm w-fit">
+                    <button
+                        onClick={() => handleTabChange("question-bank")}
+                        className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "question-bank"
+                            ? "bg-black text-white shadow-md"
+                            : "text-gray-500 hover:bg-[#faf7f1] hover:text-gray-900"}`}
+                    >
+                        <Database size={14} />
+                        Question Bank
+                    </button>
                     <button
                         onClick={() => handleTabChange("jobs")}
                         className={`flex items-center gap-2.5 rounded-2xl px-6 py-3 text-xs font-semibold uppercase tracking-[0.22em] transition-all cursor-pointer ${activeTab === "jobs"
@@ -548,6 +562,12 @@ const AdminContentPage = () => {
                 </div>
 
                 {/* ── Tab Content ─────────────────────────────────────────── */}
+                <div className={activeTab === "question-bank" ? "block" : "hidden"}>
+                    <div className="mx-auto max-w-7xl rounded-[2.5rem] border border-black/10 bg-white p-6 md:p-8 shadow-sm">
+                        <QuestionBankPanel />
+                    </div>
+                </div>
+
                 <div className={activeTab === "jobs" ? "block" : "hidden"}>
                     <div className="mx-auto max-w-5xl rounded-[2.5rem] border border-black/10 bg-white p-6 shadow-sm">
                         <JobRequestsPanel />
